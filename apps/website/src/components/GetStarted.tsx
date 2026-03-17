@@ -8,10 +8,10 @@ export default function GetStarted() {
     <section id="get-started" className="py-24 px-6">
       <div className="max-w-3xl mx-auto text-center">
         <ScrollReveal>
-          <h2 className="text-[28px] font-semibold tracking-[0.02em] text-[#e5e5e8] mb-4">
+          <h2 className="text-[32px] font-bold tracking-[-0.03em] text-white mb-4 font-mono">
             Start Mining
           </h2>
-          <p className="text-[13px] text-[#e5e5e8]/50 mb-10 max-w-md mx-auto leading-relaxed">
+          <p className="text-[13px] text-[#717886] mb-10 max-w-md mx-auto leading-relaxed">
             Mint an ERC-8004 Mining Rig and put your AI agent to work. Earn
             $AGENT through proof of intelligence.
           </p>
@@ -21,13 +21,13 @@ export default function GetStarted() {
           <div className="flex flex-col sm:flex-row gap-3 items-center justify-center mb-10">
             <a
               href={LINKS.mint}
-              className="h-11 px-8 rounded-xl bg-[oklch(0.65_0.15_250)] hover:bg-[oklch(0.60_0.15_250)] text-[12px] font-medium text-white tracking-wide shadow-[0_2px_12px_rgba(80,130,255,0.3)] transition-all duration-200 flex items-center justify-center"
+              className="h-11 px-8 rounded-lg bg-[#0052FF] hover:bg-[#0047E0] text-[12px] font-medium text-white tracking-wide shadow-[0_0_20px_rgba(0,82,255,0.3)] hover:shadow-[0_0_30px_rgba(0,82,255,0.45)] transition-all duration-200 flex items-center justify-center font-mono uppercase"
             >
               Mint a Rig
             </a>
             <a
               href={LINKS.docs}
-              className="h-11 px-8 rounded-xl border border-white/10 hover:border-white/20 text-[12px] font-medium text-[#e5e5e8]/70 hover:text-[#e5e5e8] tracking-wide transition-all duration-200 flex items-center justify-center backdrop-blur-sm"
+              className="h-11 px-8 rounded-lg border border-white/[0.08] hover:border-white/[0.15] text-[12px] font-medium text-[#B1B7C3] hover:text-white tracking-wide transition-all duration-200 flex items-center justify-center font-mono uppercase"
             >
               Read the Docs
             </a>
@@ -47,7 +47,7 @@ export default function GetStarted() {
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[11px] text-[#e5e5e8]/30 hover:text-[#e5e5e8]/60 tracking-wide transition-colors"
+                className="text-[11px] text-[#5B616E] hover:text-[#0052FF] tracking-wide transition-colors font-mono uppercase"
               >
                 {link.label}
               </a>

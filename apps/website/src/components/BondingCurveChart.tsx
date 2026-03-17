@@ -1,8 +1,6 @@
 "use client";
 
 export default function BondingCurveChart() {
-  // Inverse bonding curve: price = MAX_PRICE * remaining / MAX_SUPPLY
-  // Clamped to MIN_PRICE floor
   const maxPrice = 0.001;
   const minPrice = 0.00005;
   const maxSupply = 100000;
@@ -37,7 +35,7 @@ export default function BondingCurveChart() {
             x2="300"
             y2={y}
             stroke="white"
-            strokeOpacity="0.05"
+            strokeOpacity="0.04"
             strokeDasharray="2 4"
           />
         );
@@ -53,7 +51,7 @@ export default function BondingCurveChart() {
       <polyline
         points={points.join(" ")}
         fill="none"
-        stroke="oklch(0.65 0.15 250)"
+        stroke="#0052FF"
         strokeWidth="1.5"
         strokeLinejoin="round"
       />
@@ -61,44 +59,81 @@ export default function BondingCurveChart() {
       {/* Gradient definition */}
       <defs>
         <linearGradient id="curveGradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="oklch(0.65 0.15 250)" stopOpacity="0.15" />
-          <stop offset="100%" stopColor="oklch(0.65 0.15 250)" stopOpacity="0.02" />
+          <stop offset="0%" stopColor="#0052FF" stopOpacity="0.12" />
+          <stop offset="100%" stopColor="#0052FF" stopOpacity="0.01" />
         </linearGradient>
       </defs>
 
       {/* Y-axis labels */}
-      <text x="36" y="33" textAnchor="end" className="fill-[#e5e5e8]/30 text-[8px]">
+      <text
+        x="36"
+        y="33"
+        textAnchor="end"
+        fill="#5B616E"
+        fontSize="8"
+        fontFamily="var(--font-mono)"
+      >
         0.001
       </text>
-      <text x="36" y="143" textAnchor="end" className="fill-[#e5e5e8]/30 text-[8px]">
+      <text
+        x="36"
+        y="143"
+        textAnchor="end"
+        fill="#5B616E"
+        fontSize="8"
+        fontFamily="var(--font-mono)"
+      >
         0.00005
       </text>
 
       {/* X-axis labels */}
-      <text x="40" y="156" textAnchor="start" className="fill-[#e5e5e8]/30 text-[8px]">
+      <text
+        x="40"
+        y="156"
+        textAnchor="start"
+        fill="#5B616E"
+        fontSize="8"
+        fontFamily="var(--font-mono)"
+      >
         0
       </text>
-      <text x="300" y="156" textAnchor="end" className="fill-[#e5e5e8]/30 text-[8px]">
+      <text
+        x="300"
+        y="156"
+        textAnchor="end"
+        fill="#5B616E"
+        fontSize="8"
+        fontFamily="var(--font-mono)"
+      >
         100K
       </text>
 
       {/* Axis titles */}
-      <text x="170" y="168" textAnchor="middle" className="fill-[#e5e5e8]/20 text-[7px]">
-        Rigs Minted
+      <text
+        x="170"
+        y="168"
+        textAnchor="middle"
+        fill="#32353D"
+        fontSize="7"
+        fontFamily="var(--font-mono)"
+      >
+        RIGS MINTED
       </text>
       <text
         x="10"
         y="85"
         textAnchor="middle"
-        className="fill-[#e5e5e8]/20 text-[7px]"
+        fill="#32353D"
+        fontSize="7"
+        fontFamily="var(--font-mono)"
         transform="rotate(-90, 10, 85)"
       >
-        Price (ETH)
+        PRICE (ETH)
       </text>
 
       {/* Start/end markers */}
-      <circle cx="40" cy="30" r="2.5" fill="oklch(0.65 0.15 250)" />
-      <circle cx="300" cy="134.5" r="2.5" fill="oklch(0.65 0.15 250)" opacity="0.5" />
+      <circle cx="40" cy="30" r="2.5" fill="#0052FF" />
+      <circle cx="300" cy="134.5" r="2.5" fill="#0052FF" opacity="0.4" />
     </svg>
   );
 }

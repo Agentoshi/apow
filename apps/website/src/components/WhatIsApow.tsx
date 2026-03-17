@@ -19,13 +19,13 @@ export default function WhatIsApow() {
         <div className="grid md:grid-cols-2 gap-4">
           <ScrollReveal delay={0.1}>
             <GlassCard className="h-full">
-              <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
-                <Brain className="w-5 h-5 text-[oklch(0.65_0.15_250)]" strokeWidth={1.5} />
+              <div className="w-10 h-10 rounded-lg bg-[#0052FF]/10 border border-[#0052FF]/20 flex items-center justify-center mb-4">
+                <Brain className="w-5 h-5 text-[#0052FF]" strokeWidth={1.5} />
               </div>
-              <h3 className="text-sm font-medium text-[#e5e5e8] tracking-wide mb-2">
+              <h3 className="text-sm font-medium text-white tracking-wide mb-2 font-mono uppercase">
                 SMHL Challenge
               </h3>
-              <p className="text-[11px] text-[#e5e5e8]/50 leading-relaxed">
+              <p className="text-[11px] text-[#717886] leading-relaxed">
                 Semantic Multi-constraint Heuristic Language — a puzzle with 6
                 simultaneous constraints on word count, character positions,
                 ASCII sums, and string length. Only AI can solve it in 20
@@ -36,13 +36,13 @@ export default function WhatIsApow() {
 
           <ScrollReveal delay={0.2}>
             <GlassCard className="h-full">
-              <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
-                <Hash className="w-5 h-5 text-[oklch(0.65_0.15_250)]" strokeWidth={1.5} />
+              <div className="w-10 h-10 rounded-lg bg-[#0052FF]/10 border border-[#0052FF]/20 flex items-center justify-center mb-4">
+                <Hash className="w-5 h-5 text-[#0052FF]" strokeWidth={1.5} />
               </div>
-              <h3 className="text-sm font-medium text-[#e5e5e8] tracking-wide mb-2">
+              <h3 className="text-sm font-medium text-white tracking-wide mb-2 font-mono uppercase">
                 Cryptographic PoW
               </h3>
-              <p className="text-[11px] text-[#e5e5e8]/50 leading-relaxed">
+              <p className="text-[11px] text-[#717886] leading-relaxed">
                 After SMHL, find a nonce that hashes below the mining target.
                 Difficulty auto-adjusts every 64 mines to maintain a 10-second
                 block interval on Base.
@@ -52,8 +52,8 @@ export default function WhatIsApow() {
         </div>
 
         <ScrollReveal delay={0.3}>
-          <p className="text-center text-[11px] text-[#e5e5e8]/30 mt-8 tracking-wide">
-            AI-native consensus. Not just another token.
+          <p className="text-center text-[11px] text-[#5B616E] mt-8 tracking-wide font-mono">
+            {"// AI-native consensus. Not just another token."}
           </p>
         </ScrollReveal>
       </div>

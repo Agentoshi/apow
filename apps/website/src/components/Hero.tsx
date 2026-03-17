@@ -11,14 +11,24 @@ export default function Hero() {
         transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
         className="text-center"
       >
+        {/* Protocol label */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.05 }}
+          className="text-[11px] tracking-[0.25em] uppercase text-[#0052FF] mb-6 font-mono font-medium"
+        >
+          {"> agentic proof of work"}
+        </motion.p>
+
         <motion.h1
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.1 }}
-          className="text-[72px] sm:text-[96px] font-bold tracking-tight text-[#e5e5e8] mb-4"
+          transition={{ duration: 0.8, delay: 0.15 }}
+          className="text-[80px] sm:text-[112px] font-bold tracking-[-0.05em] text-white mb-6 font-mono leading-none"
           style={{
             textShadow:
-              "0 0 60px oklch(0.65 0.15 250 / 0.3), 0 0 120px oklch(0.65 0.15 250 / 0.15)",
+              "0 0 60px rgba(0, 82, 255, 0.3), 0 0 120px rgba(0, 82, 255, 0.12)",
           }}
         >
           aPOW
@@ -27,19 +37,19 @@ export default function Hero() {
         <motion.p
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.25 }}
-          className="text-[12px] tracking-[0.2em] uppercase text-[#e5e5e8]/30 mb-6"
+          transition={{ duration: 0.8, delay: 0.3 }}
+          className="text-[18px] sm:text-[22px] text-[#B1B7C3] font-light mb-4 max-w-md mx-auto tracking-[-0.02em]"
         >
-          Agentic Proof of Work
+          Your AI agent can earn money now.
         </motion.p>
 
         <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="text-[18px] sm:text-[22px] text-[#e5e5e8]/50 font-light mb-12 max-w-md mx-auto"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.45 }}
+          className="text-[12px] text-[#5B616E] font-mono mb-12"
         >
-          Your AI agent can earn money now.
+          mine $AGENT on Base
         </motion.p>
 
         <motion.div
@@ -50,13 +60,13 @@ export default function Hero() {
         >
           <a
             href="#get-started"
-            className="h-11 px-8 rounded-xl bg-[oklch(0.65_0.15_250)] hover:bg-[oklch(0.60_0.15_250)] text-[12px] font-medium text-white tracking-wide shadow-[0_2px_12px_rgba(80,130,255,0.3)] transition-all duration-200 flex items-center justify-center"
+            className="h-11 px-8 rounded-lg bg-[#0052FF] hover:bg-[#0047E0] text-[12px] font-medium text-white tracking-wide shadow-[0_0_20px_rgba(0,82,255,0.3)] hover:shadow-[0_0_30px_rgba(0,82,255,0.45)] transition-all duration-200 flex items-center justify-center font-mono uppercase"
           >
             Mint a Rig
           </a>
           <a
             href="#what-is-apow"
-            className="h-11 px-8 rounded-xl border border-white/10 hover:border-white/20 text-[12px] font-medium text-[#e5e5e8]/70 hover:text-[#e5e5e8] tracking-wide transition-all duration-200 flex items-center justify-center backdrop-blur-sm"
+            className="h-11 px-8 rounded-lg border border-white/[0.08] hover:border-white/[0.15] text-[12px] font-medium text-[#B1B7C3] hover:text-white tracking-wide transition-all duration-200 flex items-center justify-center font-mono uppercase"
           >
             Read the Docs
           </a>
@@ -73,9 +83,9 @@ export default function Hero() {
         <motion.div
           animate={{ y: [0, 6, 0] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="w-5 h-8 rounded-full border border-white/20 flex items-start justify-center p-1.5"
+          className="w-5 h-8 rounded-full border border-white/[0.1] flex items-start justify-center p-1.5"
         >
-          <div className="w-1 h-1.5 rounded-full bg-white/40" />
+          <div className="w-1 h-1.5 rounded-full bg-[#0052FF]/60" />
         </motion.div>
       </motion.div>
     </section>

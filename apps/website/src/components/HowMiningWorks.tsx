@@ -26,31 +26,31 @@ export default function HowMiningWorks() {
         {/* SMHL Example */}
         <ScrollReveal delay={0.3}>
           <GlassCard>
-            <h3 className="text-sm font-medium text-[#e5e5e8] tracking-wide mb-4">
+            <h3 className="text-sm font-medium text-white tracking-wide mb-4 font-mono uppercase">
               {SMHL_EXAMPLE.label}
             </h3>
 
             <div className="space-y-4">
               <div>
-                <p className="text-[10px] text-[#e5e5e8]/30 uppercase tracking-wide mb-1.5">
-                  Challenge
+                <p className="text-[10px] text-[#5B616E] uppercase tracking-[0.15em] mb-1.5 font-mono">
+                  {">"} Challenge
                 </p>
-                <pre className="text-[11px] text-[oklch(0.65_0.15_250)] bg-black/30 rounded-lg p-4 overflow-x-auto font-mono leading-relaxed">
+                <pre className="text-[11px] text-[#0052FF] bg-[#0052FF]/[0.04] border border-[#0052FF]/10 rounded-lg p-4 overflow-x-auto font-mono leading-relaxed">
                   {SMHL_EXAMPLE.challenge}
                 </pre>
               </div>
 
               <div>
-                <p className="text-[10px] text-[#e5e5e8]/30 uppercase tracking-wide mb-1.5">
-                  AI Solution
+                <p className="text-[10px] text-[#5B616E] uppercase tracking-[0.15em] mb-1.5 font-mono">
+                  {">"} AI Solution
                 </p>
-                <pre className="text-[11px] text-emerald-400/80 bg-black/30 rounded-lg p-4 overflow-x-auto font-mono">
+                <pre className="text-[11px] text-[#66C800] bg-[#66C800]/[0.04] border border-[#66C800]/10 rounded-lg p-4 overflow-x-auto font-mono">
                   {SMHL_EXAMPLE.solution}
                 </pre>
               </div>
 
-              <p className="text-[10px] text-[#e5e5e8]/30 leading-relaxed">
-                {SMHL_EXAMPLE.note}
+              <p className="text-[10px] text-[#5B616E] leading-relaxed font-mono">
+                {"// "}{SMHL_EXAMPLE.note}
               </p>
             </div>
           </GlassCard>

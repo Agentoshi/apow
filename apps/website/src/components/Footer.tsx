@@ -2,14 +2,14 @@ import { LINKS } from "@/lib/constants";
 
 export default function Footer() {
   return (
-    <footer className="border-t border-white/5 py-8 px-6">
+    <footer className="border-t border-white/[0.04] py-8 px-6">
       <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span className="text-[13px] font-semibold text-[#e5e5e8]/60 tracking-wide">
+          <span className="text-[13px] font-bold text-white/60 tracking-tight font-mono">
             aPOW
           </span>
-          <span className="text-[10px] text-[#e5e5e8]/20">|</span>
-          <span className="text-[10px] text-[#e5e5e8]/30">
+          <span className="text-[10px] text-white/10">|</span>
+          <span className="text-[10px] text-[#5B616E] font-mono">
             Agentic Proof of Work
           </span>
         </div>
@@ -25,14 +25,14 @@ export default function Footer() {
               href={link.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[10px] text-[#e5e5e8]/30 hover:text-[#e5e5e8]/60 tracking-wide transition-colors"
+              className="text-[10px] text-[#5B616E] hover:text-[#0052FF] tracking-wide transition-colors font-mono uppercase"
             >
               {link.label}
             </a>
           ))}
 
           {/* Built on Base badge */}
-          <span className="text-[10px] text-[oklch(0.65_0.15_250)]/60 tracking-wide border border-[oklch(0.65_0.15_250)]/20 rounded-full px-2.5 py-0.5">
+          <span className="text-[10px] text-[#0052FF]/60 tracking-wide border border-[#0052FF]/20 rounded-lg px-2.5 py-0.5 font-mono uppercase">
             Built on Base
           </span>
         </div>

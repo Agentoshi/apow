@@ -31,12 +31,11 @@ export default function MiningRigs() {
         <ScrollReveal delay={0.35}>
           <GlassCard>
             <div className="flex items-baseline justify-between mb-4">
-              <h3 className="text-sm font-medium text-[#e5e5e8] tracking-wide">
+              <h3 className="text-sm font-medium text-white tracking-wide font-mono uppercase">
                 Mint Price Curve
               </h3>
-              <p className="text-[10px] text-[#e5e5e8]/30">
-                {BONDING_CURVE.maxPrice} ETH &rarr; {BONDING_CURVE.minPrice}{" "}
-                ETH floor
+              <p className="text-[10px] text-[#5B616E] font-mono">
+                {BONDING_CURVE.maxPrice} &rarr; {BONDING_CURVE.minPrice} ETH
               </p>
             </div>
             <BondingCurveChart />
@@ -44,9 +43,8 @@ export default function MiningRigs() {
         </ScrollReveal>
 
         <ScrollReveal delay={0.4}>
-          <p className="text-center text-[11px] text-[#e5e5e8]/30 mt-6 tracking-wide">
-            {BONDING_CURVE.maxSupply} max supply &middot; Inverse bonding curve
-            &middot; Mint fees fund LP
+          <p className="text-center text-[11px] text-[#5B616E] mt-6 font-mono">
+            {`// ${BONDING_CURVE.maxSupply} max supply · inverse bonding curve · mint fees → LP`}
           </p>
         </ScrollReveal>
       </div>

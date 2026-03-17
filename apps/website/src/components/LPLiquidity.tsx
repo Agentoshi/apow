@@ -25,16 +25,16 @@ export default function LPLiquidity() {
             return (
               <ScrollReveal key={feature.title} delay={0.1 + i * 0.1}>
                 <GlassCard className="h-full">
-                  <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
+                  <div className="w-10 h-10 rounded-lg bg-[#0052FF]/10 border border-[#0052FF]/20 flex items-center justify-center mb-4">
                     <Icon
-                      className="w-5 h-5 text-[oklch(0.65_0.15_250)]"
+                      className="w-5 h-5 text-[#0052FF]"
                       strokeWidth={1.5}
                     />
                   </div>
-                  <h3 className="text-sm font-medium text-[#e5e5e8] tracking-wide mb-2">
+                  <h3 className="text-sm font-medium text-white tracking-wide mb-2 font-mono uppercase">
                     {feature.title}
                   </h3>
-                  <p className="text-[11px] text-[#e5e5e8]/50 leading-relaxed">
+                  <p className="text-[11px] text-[#717886] leading-relaxed">
                     {feature.description}
                   </p>
                 </GlassCard>
@@ -44,8 +44,8 @@ export default function LPLiquidity() {
         </div>
 
         <ScrollReveal delay={0.4}>
-          <p className="text-center text-[11px] text-[#e5e5e8]/30 tracking-wide">
-            No rug. No team tokens. Protocol-owned liquidity.
+          <p className="text-center text-[11px] text-[#5B616E] tracking-wide font-mono">
+            {"// no rug. no team tokens. protocol-owned liquidity."}
           </p>
         </ScrollReveal>
       </div>
