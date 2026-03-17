@@ -73,25 +73,25 @@
   background: #060608;
 }
 
-/* Dot grid texture */
-.dot-grid {
-  background-image: radial-gradient(circle, rgba(0, 82, 255, 0.07) 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-
-/* Fine grid lines */
-.fine-grid {
-  background-image:
-    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-
-/* Grain overlay */
-.grain {
+/* Plus-sign grid — crosses at intersections via SVG */
+.plus-grid {
   position: relative;
 }
-.grain::after {
+.plus-grid::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='20' y1='17' x2='20' y2='23' stroke='rgba(255,255,255,0.07)' stroke-width='0.5'/%3E%3Cline x1='17' y1='20' x2='23' y2='20' stroke='rgba(255,255,255,0.07)' stroke-width='0.5'/%3E%3C/svg%3E");
+  background-size: 40px 40px;
+}
+
+/* Noise + grain overlay (combined into one pseudo-element) */
+.noise-haze {
+  position: relative;
+}
+.noise-haze::before {
   content: "";
   position: fixed;
   inset: 0;
@@ -99,98 +99,20 @@
   pointer-events: none;
   opacity: 0.04;
   mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* ═══════════════════════════════════════════════
-   CRT ANALOGUE SCREEN EFFECT
-   Blue phosphor variant for APoW
-   ═══════════════════════════════════════════════ */
-
-:root {
-  --crt-scanline-opacity: 0.035;
-  --crt-subpixel-opacity: 0.025;
-  --crt-vignette-opacity: 0.4;
-  --crt-glow-color: rgba(0, 82, 255, 0.015);
-  --crt-sweep-speed: 10s;
-  --crt-sweep-height: 160px;
-  --crt-sweep-opacity: 0.025;
-  --crt-aberration: 0.35px;
-}
-
-/* Scanlines + RGB sub-pixels */
-.crt::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9998;
-  background:
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0px,
-      transparent 1px,
-      rgba(0, 0, 0, var(--crt-scanline-opacity)) 1px,
-      rgba(0, 0, 0, var(--crt-scanline-opacity)) 2px
-    ),
-    repeating-linear-gradient(
-      to right,
-      rgba(255, 0, 0, var(--crt-subpixel-opacity)) 0px,
-      rgba(0, 255, 0, var(--crt-subpixel-opacity)) 1px,
-      rgba(0, 0, 255, var(--crt-subpixel-opacity)) 2px,
-      transparent 3px
-    );
-}
-
-/* Vignette + phosphor glow */
-.crt::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9999;
-  background: radial-gradient(
-    ellipse at center,
-    var(--crt-glow-color) 0%,
-    transparent 50%,
-    rgba(0, 0, 0, var(--crt-vignette-opacity)) 100%
-  );
-}
-
-/* Sweep line (electron beam refresh) */
-.crt-sweep {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: var(--crt-sweep-height);
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(0, 82, 255, var(--crt-sweep-opacity)) 50%,
-    transparent 100%
-  );
-  pointer-events: none;
-  z-index: 10000;
-  animation: crt-sweep var(--crt-sweep-speed) linear infinite;
-}
-
-@keyframes crt-sweep {
-  0%   { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
-}
-
-/* Chromatic aberration on headings */
-.crt-text {
+/* Blue glow on headings — layered for depth */
+.glow-text {
   text-shadow:
-    var(--crt-aberration) 0 0.5px rgba(0, 82, 255, 0.25),
-    calc(var(--crt-aberration) * -1) 0 0.5px rgba(255, 0, 80, 0.15);
+    0 0 20px rgba(0, 82, 255, 0.2),
+    0 0 60px rgba(0, 82, 255, 0.1),
+    0 0 120px rgba(0, 82, 255, 0.05);
 }
 
-/* Respect reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .crt-sweep { animation: none; display: none; }
-  .crt-text { text-shadow: none; }
+/* Inset depth on grid cells — floating-in-darkness */
+.dashboard > * {
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
 }
 
 /* Custom scrollbar */

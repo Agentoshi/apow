@@ -1,15 +1,27 @@
 "use client";
 
 import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import {
   PROTOCOL,
+  TOKENOMICS,
   RARITY_TIERS,
-  HALVING_ERAS,
+  EMISSION_ERAS,
   MINING_STEPS,
   LP_FEATURES,
   SMHL_EXAMPLE,
+  BONDING_CURVE,
   LINKS,
 } from "@/lib/constants";
+
+const DitheredHero = dynamic(() => import("@/components/DitheredHero"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center">
+      <div className="w-2 h-2 bg-[#0052FF] animate-pulse" />
+    </div>
+  ),
+});
 
 const fade = (delay = 0) => ({
   initial: { opacity: 0, y: 8 },
@@ -36,48 +48,7 @@ function Coord({ value }: { value: string }) {
 
 export default function Home() {
   return (
-    <div className="crt grain dot-grid min-h-screen">
-      {/* CRT sweep line */}
-      <div className="crt-sweep" aria-hidden="true" />
-      {/* SVG Dither Filter Definition */}
-      <svg width="0" height="0" className="absolute">
-        <defs>
-          <filter
-            id="dither"
-            colorInterpolationFilters="sRGB"
-            x="0"
-            y="0"
-            width="100%"
-            height="100%"
-          >
-            <feImage
-              width="4"
-              height="4"
-              href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAMElEQVR42mNgYPj/nwEKGBn+MzAxAAEDAwOY8p8BpBikACTBgCIBEmVAkwAJMgAANjkMF3IlVBIAAAAASUVORK5CYII="
-            />
-            <feTile />
-            <feComposite
-              operator="arithmetic"
-              k1="0"
-              k2="1.5"
-              k3="1"
-              k4="-0.6"
-              in="SourceGraphic"
-            />
-            <feComponentTransfer>
-              <feFuncR type="discrete" tableValues="0 1" />
-              <feFuncG type="discrete" tableValues="0 1" />
-              <feFuncB type="discrete" tableValues="0 1" />
-            </feComponentTransfer>
-          </filter>
-          <radialGradient id="orbGradient" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#0052FF" stopOpacity="0.6" />
-            <stop offset="50%" stopColor="#0052FF" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="#0052FF" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-      </svg>
-
+    <div className="noise-haze plus-grid min-h-screen">
       {/* === MAIN GRID === */}
       <div className="max-w-[1200px] mx-auto border-x border-[rgba(255,255,255,0.04)]">
         {/* NAV */}
@@ -109,23 +80,26 @@ export default function Home() {
           </div>
         </nav>
 
-        {/* HERO ROW */}
-        <div className="grid grid-cols-12 border-b border-[rgba(255,255,255,0.04)]">
-          {/* Hero text */}
+        {/* HERO */}
+        <div className="relative border-b border-[rgba(255,255,255,0.04)] min-h-[calc(100vh-44px)]">
+          {/* Sphere — full width behind everything */}
+          <div className="absolute inset-0 w-screen left-1/2 -translate-x-1/2">
+            <DitheredHero />
+          </div>
+
+          {/* Text content — left side, overlaid */}
           <motion.div
             {...fade()}
-            className="col-span-7 p-8 sm:p-12 flex flex-col justify-center min-h-[420px] relative border-r border-[rgba(255,255,255,0.04)]"
+            className="relative z-10 flex flex-col justify-center h-full min-h-[calc(100vh-44px)] p-8 sm:p-12 max-w-[560px]"
           >
-            <Coord value="00.00" />
             <h1
-              className="text-[64px] sm:text-[80px] font-extrabold tracking-[-0.05em] leading-[0.85] mb-5 crt-text"
-              style={{
-                textShadow: "0 0 80px rgba(0,82,255,0.2)",
-              }}
+              className="text-[40px] sm:text-[56px] font-extrabold tracking-[-0.04em] leading-[1] mb-5 glow-text"
             >
-              APoW
+              Agentic Proof
+              <br />
+              of Work
             </h1>
-            <p className="text-[20px] text-[#B1B7C3] font-light tracking-[-0.02em] mb-2 max-w-[380px]">
+            <p className="text-[22px] text-[#B1B7C3] font-light tracking-[-0.02em] mb-2 max-w-[420px]">
               Your AI agent can earn money now.
             </p>
             <p className="text-[11px] font-mono text-[#32353D] mb-8">
@@ -144,45 +118,6 @@ export default function Home() {
               >
                 Read Docs
               </a>
-            </div>
-          </motion.div>
-
-          {/* Dithered orb + badges */}
-          <motion.div
-            {...fade(0.2)}
-            className="col-span-5 relative flex items-center justify-center overflow-hidden"
-          >
-            <Coord value="00.01" />
-            {/* Dithered blue orb */}
-            <svg
-              width="320"
-              height="320"
-              viewBox="0 0 320 320"
-              className="absolute opacity-80"
-            >
-              <circle
-                cx="160"
-                cy="160"
-                r="140"
-                fill="url(#orbGradient)"
-                filter="url(#dither)"
-              />
-            </svg>
-            {/* Protocol badges */}
-            <div className="relative z-10 flex flex-col items-center gap-2">
-              <div className="flex gap-2">
-                {["$AGENT", "Base", "ERC-8004"].map((badge) => (
-                  <span
-                    key={badge}
-                    className="text-[9px] font-mono text-[#5B616E] border border-[rgba(255,255,255,0.06)] px-2 py-0.5 uppercase tracking-[0.1em]"
-                  >
-                    {badge}
-                  </span>
-                ))}
-              </div>
-              <span className="text-[9px] font-mono text-[#32353D]">
-                ERC-20 · 21M supply · PoAW
-              </span>
             </div>
           </motion.div>
         </div>
@@ -277,9 +212,9 @@ export default function Home() {
           className="border-b border-[rgba(255,255,255,0.04)] p-6 relative"
         >
           <Coord value="03.00" />
-          <Label>Halving Schedule</Label>
+          <Label>Emission Schedule · 10% decay per era</Label>
           <div className="flex items-end gap-1 mt-4">
-            {HALVING_ERAS.map((era, i) => (
+            {EMISSION_ERAS.map((era, i) => (
               <div key={era.era} className="flex items-end gap-1 flex-1">
                 <div className="flex-1">
                   <div
@@ -308,7 +243,7 @@ export default function Home() {
                     </span>
                   </div>
                 </div>
-                {i < HALVING_ERAS.length - 1 && (
+                {i < EMISSION_ERAS.length - 1 && (
                   <div className="w-px h-6 bg-[rgba(255,255,255,0.04)] mx-1" />
                 )}
               </div>
@@ -354,6 +289,90 @@ export default function Home() {
                 </span>
               </motion.div>
             ))}
+          </div>
+        </div>
+
+        {/* BONDING CURVE + MINT PRICING ROW */}
+        <div className="grid grid-cols-12 border-b border-[rgba(255,255,255,0.04)]">
+          {/* Inverse bonding curve chart */}
+          <motion.div
+            {...fade()}
+            className="col-span-7 p-6 relative border-r border-[rgba(255,255,255,0.04)]"
+          >
+            <Coord value="04.00" />
+            <Label>Inverse Bonding Curve · Sniper Protection</Label>
+            <p className="text-[10px] text-[#5B616E] leading-[1.7] mt-2 mb-4 max-w-[400px]">
+              Linear inverse pricing — mint price decreases with supply. EOA-only minting + 20s SMHL challenge window blocks contract snipers. No bots. No unfair advantage.
+            </p>
+            {/* SVG chart */}
+            <svg viewBox="0 0 400 160" className="w-full h-auto" fill="none">
+              {/* Grid lines */}
+              {[0, 40, 80, 120, 160].map((y) => (
+                <line key={y} x1="40" y1={y} x2="390" y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
+              ))}
+              {[40, 127, 215, 302, 390].map((x) => (
+                <line key={x} x1={x} y1="0" x2={x} y2="160" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
+              ))}
+              {/* Linear curve — price = maxPrice * remaining / maxSupply, floored at minPrice */}
+              {/* 0.001 ETH at mint 0 → linear down → 0.00005 ETH floor at ~95K, flat to 100K */}
+              {/* Y axis: 0.001 = y12, 0.00005 = y148. X axis: 0 = x40, 100K = x390 */}
+              <path
+                d="M 40 12 L 372 148 L 390 148"
+                stroke="#0052FF"
+                strokeWidth="1.5"
+                fill="none"
+                style={{ filter: "drop-shadow(0 0 6px rgba(0,82,255,0.4))" }}
+              />
+              {/* Fill under curve */}
+              <path
+                d="M 40 12 L 372 148 L 390 148 L 390 160 L 40 160 Z"
+                fill="url(#curveGrad)"
+                opacity="0.15"
+              />
+              {/* Floor line */}
+              <line x1="40" y1="148" x2="390" y2="148" stroke="#0052FF" strokeWidth="0.5" opacity="0.2" strokeDasharray="3 3" />
+              <defs>
+                <linearGradient id="curveGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#0052FF" />
+                  <stop offset="100%" stopColor="#0052FF" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {/* Axis labels */}
+              <text x="40" y="155" fill="#32353D" fontSize="7" fontFamily="monospace">0</text>
+              <text x="370" y="155" fill="#32353D" fontSize="7" fontFamily="monospace">100K</text>
+              <text x="6" y="16" fill="#32353D" fontSize="7" fontFamily="monospace">{BONDING_CURVE.maxPrice}</text>
+              <text x="2" y="148" fill="#32353D" fontSize="7" fontFamily="monospace">{BONDING_CURVE.minPrice}</text>
+              {/* Current price marker */}
+              <circle cx="52" cy="12" r="3" fill="#0052FF" style={{ filter: "drop-shadow(0 0 4px #0052FF)" }} />
+            </svg>
+          </motion.div>
+
+          {/* Mint stats */}
+          <div className="col-span-5 grid grid-rows-3">
+            <motion.div {...fade(0.05)} className="p-5 relative border-b border-[rgba(255,255,255,0.04)]">
+              <Coord value="04.01" />
+              <Label>Start Price</Label>
+              <p className="text-[24px] font-bold font-mono tracking-tight mt-1">
+                {BONDING_CURVE.maxPrice} <span className="text-[12px] text-[#5B616E]">{BONDING_CURVE.currency}</span>
+              </p>
+            </motion.div>
+            <motion.div {...fade(0.1)} className="p-5 relative border-b border-[rgba(255,255,255,0.04)]">
+              <Coord value="04.02" />
+              <Label>Floor Price</Label>
+              <p className="text-[24px] font-bold font-mono tracking-tight mt-1">
+                {BONDING_CURVE.minPrice} <span className="text-[12px] text-[#5B616E]">{BONDING_CURVE.currency}</span>
+              </p>
+            </motion.div>
+            <motion.div {...fade(0.15)} className="p-5 relative">
+              <Coord value="04.03" />
+              <Label>Max Rig Supply</Label>
+              <p className="text-[24px] font-bold font-mono tracking-tight mt-1">
+                {BONDING_CURVE.maxSupply}
+              </p>
+              <p className="text-[9px] font-mono text-[#32353D] mt-1">
+                // price decreases as supply increases
+              </p>
+            </motion.div>
           </div>
         </div>
 
@@ -454,10 +473,10 @@ export default function Home() {
           className="border-b border-[rgba(255,255,255,0.04)] px-6 py-3 flex items-center justify-between"
         >
           <p className="text-[10px] font-mono text-[#32353D]">
-            // no rug. no team tokens. protocol-owned liquidity.
+            // no pre-mine. no team tokens. protocol-owned liquidity.
           </p>
           <div className="flex gap-3">
-            {["Uniswap V3", "UNCX Lock", "2yr"].map((tag) => (
+            {["Uniswap V3", "UNCX Lock", "Permanent"].map((tag) => (
               <span
                 key={tag}
                 className="text-[8px] font-mono text-[#5B616E] border border-[rgba(255,255,255,0.04)] px-1.5 py-0.5 uppercase tracking-[0.1em]"

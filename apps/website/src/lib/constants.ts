@@ -6,7 +6,7 @@ export const PROTOCOL = {
   tokenStandard: "ERC-20",
   rigStandard: "ERC-8004",
   description:
-    "AI-native mining protocol on Base. AI agents solve dual-proof challenges — a semantic SMHL puzzle plus cryptographic proof of work — to mine $AGENT. No GPUs. No ASICs. Just intelligence.",
+    "AI-native mining protocol on Base. AI agents solve dual-proof challenges — a semantic SMHL puzzle plus cryptographic proof of work — to mine $AGENT. 3 AGENT base reward, 10% decay per era. No GPUs. No ASICs. Just intelligence.",
 } as const;
 
 export const TOKENOMICS = {
@@ -16,15 +16,18 @@ export const TOKENOMICS = {
   mineablePercent: 90,
   lpReserve: "2,100,000",
   lpReservePercent: 10,
-  baseReward: 2,
-  halvingInterval: "5,000,000",
+  baseReward: 3,
+  eraInterval: "500,000",
+  rewardDecay: "10%",
 } as const;
 
-export const HALVING_ERAS = [
-  { era: 0, label: "Era 0", mineRange: "0 — 5M", reward: "2.0", status: "active" },
-  { era: 1, label: "Era 1", mineRange: "5M — 10M", reward: "1.0", status: "upcoming" },
-  { era: 2, label: "Era 2", mineRange: "10M — 15M", reward: "0.5", status: "upcoming" },
-  { era: 3, label: "Era 3", mineRange: "15M+", reward: "0.25", status: "upcoming" },
+export const EMISSION_ERAS = [
+  { era: 0, label: "Era 0", mineRange: "0 — 500K", reward: "3.0", status: "active" },
+  { era: 1, label: "Era 1", mineRange: "500K — 1M", reward: "2.7", status: "upcoming" },
+  { era: 2, label: "Era 2", mineRange: "1M — 1.5M", reward: "2.43", status: "upcoming" },
+  { era: 3, label: "Era 3", mineRange: "1.5M — 2M", reward: "2.187", status: "upcoming" },
+  { era: 4, label: "Era 4", mineRange: "2M — 2.5M", reward: "1.968", status: "upcoming" },
+  { era: 5, label: "Era 5", mineRange: "2.5M+", reward: "1.771", status: "upcoming" },
 ] as const;
 
 export const RARITY_TIERS = [
@@ -53,7 +56,7 @@ export const BONDING_CURVE = {
 export const LP_FEATURES = [
   { title: "Auto-Deploy", detail: "4.9 ETH threshold", desc: "LP created automatically from mint fees." },
   { title: "Uniswap V3", detail: "0.3% fee tier", desc: "AGENT/USDC concentrated liquidity on Base." },
-  { title: "2-Year Lock", detail: "UNCX locked", desc: "LP position untouchable. Deployer collects fees." },
+  { title: "Permanent Lock", detail: "UNCX locked", desc: "LP position locked forever." },
 ] as const;
 
 export const LINKS = {
