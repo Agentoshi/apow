@@ -56,10 +56,10 @@
     @apply border-border;
   }
   body {
-    @apply bg-[#060608] text-foreground;
+    @apply bg-[#060608] text-foreground overflow-x-hidden;
   }
   html {
-    @apply font-sans scroll-smooth;
+    @apply font-sans scroll-smooth overflow-x-hidden;
   }
 }
 
@@ -102,12 +102,90 @@
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
+/* CRT bloom — blurs a duplicate of the page on top for glowing highlights */
+.crt-bloom-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 70% 60% at 50% 50%,
+    rgba(0, 82, 255, 0.06) 0%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.5) 100%
+  );
+}
+
+/* Glow only — no color offset */
+.crt-glow h1,
+.crt-glow h2,
+.crt-glow p,
+.crt-glow span,
+.crt-glow a,
+.crt-glow pre {
+  text-shadow:
+    0 0 8px rgba(255, 255, 255, 0.15),
+    0 0 24px rgba(255, 255, 255, 0.08),
+    0 0 48px rgba(0, 82, 255, 0.06);
+}
+.crt-glow h1,
+.crt-glow h2 {
+  text-shadow:
+    0 0 10px rgba(255, 255, 255, 0.3),
+    0 0 30px rgba(255, 255, 255, 0.15),
+    0 0 60px rgba(0, 82, 255, 0.2),
+    0 0 120px rgba(0, 82, 255, 0.1);
+}
+
+/* Aberration only — color offset, no glow */
+.crt-aberration h1,
+.crt-aberration h2,
+.crt-aberration p,
+.crt-aberration span,
+.crt-aberration a,
+.crt-aberration pre {
+  text-shadow:
+    0.8px 0 0.6px rgba(0, 100, 255, 0.3),
+    -0.8px 0 0.6px rgba(255, 0, 80, 0.18);
+}
+.crt-aberration h1,
+.crt-aberration h2 {
+  text-shadow:
+    1.2px 0 1px rgba(0, 100, 255, 0.4),
+    -1.2px 0 1px rgba(255, 0, 80, 0.22);
+}
+
+/* Both combined */
+.crt-both h1,
+.crt-both h2,
+.crt-both p,
+.crt-both span,
+.crt-both a,
+.crt-both pre {
+  text-shadow:
+    0.8px 0 0.6px rgba(0, 100, 255, 0.3),
+    -0.8px 0 0.6px rgba(255, 0, 80, 0.18),
+    0 0 8px rgba(255, 255, 255, 0.15),
+    0 0 24px rgba(255, 255, 255, 0.08),
+    0 0 48px rgba(0, 82, 255, 0.06);
+}
+.crt-both h1,
+.crt-both h2 {
+  text-shadow:
+    1.2px 0 1px rgba(0, 100, 255, 0.4),
+    -1.2px 0 1px rgba(255, 0, 80, 0.22),
+    0 0 10px rgba(255, 255, 255, 0.3),
+    0 0 30px rgba(255, 255, 255, 0.15),
+    0 0 60px rgba(0, 82, 255, 0.2),
+    0 0 120px rgba(0, 82, 255, 0.1);
+}
+
 /* Blue glow on headings — layered for depth */
 .glow-text {
   text-shadow:
-    0 0 20px rgba(0, 82, 255, 0.2),
-    0 0 60px rgba(0, 82, 255, 0.1),
-    0 0 120px rgba(0, 82, 255, 0.05);
+    0 0 20px rgba(0, 82, 255, 0.3),
+    0 0 60px rgba(0, 82, 255, 0.15),
+    0 0 120px rgba(0, 82, 255, 0.08);
 }
 
 /* Inset depth on grid cells — floating-in-darkness */

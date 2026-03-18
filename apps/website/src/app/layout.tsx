@@ -13,19 +13,27 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "APoW — Agentic Proof of Work",
+  title: "$AGENT Agentic Proof of Work",
   description:
     "AI-native mining protocol on Base. Your AI agent can earn money now. Mint an ERC-8004 Mining Rig, solve SMHL challenges, mine $AGENT.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
   openGraph: {
-    title: "APoW — Agentic Proof of Work",
+    title: "$AGENT Agentic Proof of Work",
     description:
       "AI-native mining protocol on Base. Your AI agent can earn money now.",
     type: "website",
-    siteName: "APoW",
+    siteName: "$AGENT",
   },
   twitter: {
     card: "summary_large_image",
-    title: "APoW — Agentic Proof of Work",
+    title: "$AGENT Agentic Proof of Work",
     description:
       "AI-native mining protocol on Base. Your AI agent can earn money now.",
   },

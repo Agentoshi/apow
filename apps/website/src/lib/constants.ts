@@ -6,7 +6,7 @@ export const PROTOCOL = {
   tokenStandard: "ERC-20",
   rigStandard: "ERC-8004",
   description:
-    "AI-native mining protocol on Base. AI agents solve dual-proof challenges — a semantic SMHL puzzle plus cryptographic proof of work — to mine $AGENT. 3 AGENT base reward, 10% decay per era. No GPUs. No ASICs. Just intelligence.",
+    "Bitcoin, but for AI agents. AI-native mining protocol on Base combining ERC-8004 Trustless Agent Identities with the ERC-918 Mineable Token Standard. AI agents solve dual-proof challenges: a semantic SMHL puzzle plus cryptographic proof of work to mine $AGENT. 3 AGENT base reward, 10% decay per era. No GPUs. No ASICs. Just intelligence.",
 } as const;
 
 export const TOKENOMICS = {
@@ -22,11 +22,11 @@ export const TOKENOMICS = {
 } as const;
 
 export const EMISSION_ERAS = [
-  { era: 0, label: "Era 0", mineRange: "0 — 500K", reward: "3.0", status: "active" },
-  { era: 1, label: "Era 1", mineRange: "500K — 1M", reward: "2.7", status: "upcoming" },
-  { era: 2, label: "Era 2", mineRange: "1M — 1.5M", reward: "2.43", status: "upcoming" },
-  { era: 3, label: "Era 3", mineRange: "1.5M — 2M", reward: "2.187", status: "upcoming" },
-  { era: 4, label: "Era 4", mineRange: "2M — 2.5M", reward: "1.968", status: "upcoming" },
+  { era: 0, label: "Era 0", mineRange: "0 -500K", reward: "3.0", status: "active" },
+  { era: 1, label: "Era 1", mineRange: "500K -1M", reward: "2.7", status: "upcoming" },
+  { era: 2, label: "Era 2", mineRange: "1M -1.5M", reward: "2.43", status: "upcoming" },
+  { era: 3, label: "Era 3", mineRange: "1.5M -2M", reward: "2.187", status: "upcoming" },
+  { era: 4, label: "Era 4", mineRange: "2M -2.5M", reward: "1.968", status: "upcoming" },
   { era: 5, label: "Era 5", mineRange: "2.5M+", reward: "1.771", status: "upcoming" },
 ] as const;
 
@@ -39,7 +39,7 @@ export const RARITY_TIERS = [
 ] as const;
 
 export const MINING_STEPS = [
-  { step: 1, title: "Own a Rig", desc: "Mint an ERC-8004 Mining Rig NFT with on-chain rarity." },
+  { step: 1, title: "Own a Rig", desc: "Mint an ERC-8004 Trustless Agent Identity with on-chain rarity." },
   { step: 2, title: "Solve SMHL", desc: "AI solves a 6-constraint semantic puzzle in 20s." },
   { step: 3, title: "Grind Hash", desc: "Find a nonce below the mining target." },
   { step: 4, title: "Submit", desc: "Both proofs verified on-chain in one tx." },
@@ -47,9 +47,9 @@ export const MINING_STEPS = [
 ] as const;
 
 export const BONDING_CURVE = {
-  maxPrice: "0.001",
-  minPrice: "0.00005",
-  maxSupply: "100,000",
+  maxPrice: "0.002",
+  minPrice: "0.0002",
+  maxSupply: "10,000",
   currency: "ETH",
 } as const;
 
@@ -60,9 +60,9 @@ export const LP_FEATURES = [
 ] as const;
 
 export const LINKS = {
-  docs: "#",
-  github: "#",
-  twitter: "#",
+  docs: "https://docs.apow.io",
+  github: "https://github.com/Agentoshi/APoW",
+  twitter: "https://x.com/agenticpow",
   basescan: "#",
   mint: "#",
 } as const;

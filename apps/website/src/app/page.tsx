@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import {
   PROTOCOL,
@@ -23,16 +23,9 @@ const DitheredHero = dynamic(() => import("@/components/DitheredHero"), {
   ),
 });
 
-const fade = (delay = 0) => ({
-  initial: { opacity: 0, y: 8 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true },
-  transition: { duration: 0.5, delay, ease: [0.25, 0.46, 0.45, 0.94] as const },
-});
-
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-[10px] font-mono text-[#5B616E] uppercase tracking-[0.15em]">
+    <span className="text-[10px] font-mono text-[#4D9FFF] uppercase tracking-[0.15em]">
       {children}
     </span>
   );
@@ -40,61 +33,203 @@ function Label({ children }: { children: React.ReactNode }) {
 
 function Coord({ value }: { value: string }) {
   return (
-    <span className="text-[9px] font-mono text-[#32353D] absolute top-2 right-3 select-none">
+    <span className="text-[9px] font-mono text-[#4D9FFF] absolute top-2 right-3 select-none">
       {value}
     </span>
   );
 }
 
-export default function Home() {
+function MobileMenu() {
+  const [open, setOpen] = useState(false);
+  const links = [
+    { label: "Docs", href: LINKS.docs },
+    { label: "GitHub", href: LINKS.github },
+    { label: "Twitter", href: LINKS.twitter },
+  ];
   return (
-    <div className="noise-haze plus-grid min-h-screen">
-      {/* === MAIN GRID === */}
-      <div className="max-w-[1200px] mx-auto border-x border-[rgba(255,255,255,0.04)]">
-        {/* NAV */}
-        <nav className="border-b border-[rgba(255,255,255,0.04)] px-5 h-11 flex items-center justify-between">
+    <div className="sm:hidden relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-8 h-8 flex flex-col items-center justify-center gap-[5px]"
+        aria-label="Menu"
+      >
+        <span className={`block w-4 h-px bg-[#5B616E] transition-all duration-200 ${open ? "rotate-45 translate-y-[3px]" : ""}`} />
+        <span className={`block w-4 h-px bg-[#5B616E] transition-all duration-200 ${open ? "-rotate-45 -translate-y-[3px]" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute top-full right-0 mt-2 border border-[rgba(255,255,255,0.06)] bg-[#0A0B0D] min-w-[140px] z-50">
+          {links.map((l) => (
+            <a
+              key={l.label}
+              href={l.href}
+              target={l.href.startsWith("http") ? "_blank" : undefined}
+              rel={l.href.startsWith("http") ? "noopener noreferrer" : undefined}
+              onClick={() => setOpen(false)}
+              className="block px-4 py-2.5 text-[10px] font-mono text-[#4D9FFF] hover:text-[#0052FF] hover:bg-[rgba(255,255,255,0.02)] uppercase tracking-[0.1em] transition-colors"
+            >
+              {l.label}
+            </a>
+          ))}
+          <a
+            href="#get-started"
+            onClick={() => setOpen(false)}
+            className="block px-4 py-2.5 text-[10px] font-mono text-[#0052FF] uppercase tracking-[0.1em] border-t border-[rgba(255,255,255,0.06)] transition-colors"
+          >
+            Mint
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CrtToggle({ on, setOn }: { on: boolean; setOn: (v: boolean) => void }) {
+  return (
+    <div className="fixed bottom-4 right-4 z-[9999] flex flex-col items-end gap-2 font-mono group">
+      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-[9px] text-[#4D9FFF] bg-[#0A0B0D] border border-[rgba(255,255,255,0.08)] px-3 py-1.5 max-w-[180px] leading-[1.5] pointer-events-none">
+        If the site is loading slow, toggle the CRT effect off.
+      </div>
+      <div className="flex gap-px bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.08)]">
+        <button
+          onClick={() => setOn(true)}
+          className={`px-3 py-1.5 text-[9px] uppercase tracking-[0.1em] transition-colors ${
+            on ? "bg-[#0052FF] text-white" : "bg-[#0A0B0D] text-[#4D9FFF] hover:text-white"
+          }`}
+        >
+          CRT
+        </button>
+        <button
+          onClick={() => setOn(false)}
+          className={`px-3 py-1.5 text-[9px] uppercase tracking-[0.1em] transition-colors ${
+            !on ? "bg-[#0052FF] text-white" : "bg-[#0A0B0D] text-[#4D9FFF] hover:text-white"
+          }`}
+        >
+          Off
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function Home() {
+  const [ready, setReady] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [canvasReady, setCanvasReady] = useState(false);
+  const [crtOn, setCrtOn] = useState(true);
+
+  useEffect(() => {
+    document.fonts.ready.then(() => setProgress((p) => Math.max(p, 0.4)));
+
+    const images = Array.from(document.images);
+    if (images.length > 0) {
+      Promise.all(
+        images.filter((img) => !img.complete).map(
+          (img) => new Promise((r) => { img.onload = r; img.onerror = r; })
+        )
+      ).then(() => setProgress((p) => Math.max(p, 0.7)));
+    } else {
+      setProgress((p) => Math.max(p, 0.7));
+    }
+  }, []);
+
+  const onCanvasReady = useCallback(() => {
+    setCanvasReady(true);
+    setProgress(1);
+  }, []);
+
+  useEffect(() => {
+    if (canvasReady) {
+      const t = setTimeout(() => setReady(true), 300);
+      return () => clearTimeout(t);
+    }
+  }, [canvasReady]);
+
+  // Safety timeout
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setProgress(1);
+      setTimeout(() => setReady(true), 200);
+    }, 5000);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <div className={`noise-haze plus-grid min-h-screen overflow-x-hidden ${crtOn ? "crt-both" : ""}`}>
+      {/* Loading screen */}
+      <div
+        className={`fixed inset-0 z-[10000] bg-[#060608] flex flex-col items-center justify-center gap-6 transition-opacity duration-500 ${ready ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+      >
+        <img src="/logo.png?v=2" alt="APoW" className="w-10 h-10 opacity-40" />
+        <div className="w-40 h-px bg-[rgba(255,255,255,0.06)] overflow-hidden">
+          <div
+            className="h-full bg-[#0052FF]"
+            style={{
+              width: `${progress * 100}%`,
+              boxShadow: "0 0 12px rgba(0,82,255,0.5)",
+              transition: "width 0.3s ease-out",
+            }}
+          />
+        </div>
+        <span className="text-[9px] font-mono text-[#4D9FFF] uppercase tracking-[0.15em]">
+          loading
+        </span>
+      </div>
+
+      {/* CRT phosphor glow overlay */}
+      <div className="crt-bloom-overlay" aria-hidden="true" />
+
+      {/* Dev toggle */}
+      <CrtToggle on={crtOn} setOn={setCrtOn} />
+
+      {/* NAV */}
+      <div className="border-b border-[rgba(255,255,255,0.04)]">
+        <nav className="max-w-[1200px] mx-auto px-5 h-11 flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <img src="/logo.png?v=2" alt="APoW" className="w-5 h-5" />
             <span className="text-[13px] font-semibold tracking-[-0.02em]">
               APoW
             </span>
-            <span className="text-[10px] font-mono text-[#32353D]">
-              agentic proof of work
+            <span className="text-[10px] font-mono text-[#4D9FFF]">
+              AGENTCOIN
             </span>
           </div>
-          <div className="flex items-center gap-4">
-            {["Docs", "GitHub", "Twitter"].map((l) => (
+          <div className="hidden sm:flex items-center gap-4">
+            {[
+              { label: "Docs", href: LINKS.docs },
+              { label: "GitHub", href: LINKS.github },
+              { label: "Twitter", href: LINKS.twitter },
+            ].map((l) => (
               <a
-                key={l}
-                href="#"
-                className="text-[10px] font-mono text-[#5B616E] hover:text-[#0052FF] uppercase tracking-[0.1em] transition-colors"
+                key={l.label}
+                href={l.href}
+                target={l.href.startsWith("http") ? "_blank" : undefined}
+                rel={l.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                className="text-[10px] font-mono text-[#4D9FFF] hover:text-[#0052FF] uppercase tracking-[0.1em] transition-colors"
               >
-                {l}
+                {l.label}
               </a>
             ))}
             <a
               href="#get-started"
-              className="text-[10px] font-mono text-[#0052FF] uppercase tracking-[0.1em] border border-[#0052FF]/20 px-3 py-1 hover:bg-[#0052FF]/10 transition-colors"
+              className="text-[10px] font-mono text-[#4D9FFF] uppercase tracking-[0.1em] border border-[#4D9FFF]/30 px-3 py-1 hover:bg-[#4D9FFF]/20 transition-colors"
             >
-              Mint
+              mine
             </a>
           </div>
+          <MobileMenu />
         </nav>
+      </div>
 
-        {/* HERO */}
-        <div className="relative border-b border-[rgba(255,255,255,0.04)] min-h-[calc(100vh-44px)]">
-          {/* Sphere — full width behind everything */}
-          <div className="absolute inset-0 w-screen left-1/2 -translate-x-1/2">
-            <DitheredHero />
-          </div>
+      {/* HERO */}
+      <div className="relative border-b border-[rgba(255,255,255,0.04)] min-h-[calc(100vh-44px)]">
+        <div className="absolute inset-0">
+          <DitheredHero onReady={onCanvasReady} />
+        </div>
 
-          {/* Text content — left side, overlaid */}
-          <motion.div
-            {...fade()}
-            className="relative z-10 flex flex-col justify-center h-full min-h-[calc(100vh-44px)] p-8 sm:p-12 max-w-[560px]"
-          >
-            <h1
-              className="text-[40px] sm:text-[56px] font-extrabold tracking-[-0.04em] leading-[1] mb-5 glow-text"
-            >
+        <div className="relative z-10 flex flex-col justify-center h-full min-h-[calc(100vh-44px)] p-8 sm:p-12 max-w-[1200px] mx-auto pointer-events-none">
+          <div className="max-w-[560px]">
+            <img src="/logo.png?v=2" alt="APoW" className="w-14 h-14 mb-6 pointer-events-auto" />
+            <h1 className="text-[40px] sm:text-[56px] font-extrabold tracking-[-0.04em] leading-[1] mb-5">
               Agentic Proof
               <br />
               of Work
@@ -102,26 +237,31 @@ export default function Home() {
             <p className="text-[22px] text-[#B1B7C3] font-light tracking-[-0.02em] mb-2 max-w-[420px]">
               Your AI agent can earn money now.
             </p>
-            <p className="text-[11px] font-mono text-[#32353D] mb-8">
+            <p className="text-[11px] font-mono text-[#4D9FFF] mb-8">
               mine $AGENT on Base
             </p>
             <div className="flex gap-2">
               <a
                 href="#get-started"
-                className="h-9 px-5 text-[11px] font-mono uppercase tracking-[0.08em] bg-[#0052FF] hover:bg-[#0047E0] text-white flex items-center transition-colors shadow-[0_0_24px_rgba(0,82,255,0.25)]"
+                className="h-9 px-5 text-[11px] font-mono uppercase tracking-[0.08em] bg-[#0052FF] hover:bg-[#0047E0] text-white flex items-center transition-colors shadow-[0_0_24px_rgba(0,82,255,0.25)] pointer-events-auto"
               >
-                Mint a Rig
+                START MINING
               </a>
               <a
-                href="#protocol"
-                className="h-9 px-5 text-[11px] font-mono uppercase tracking-[0.08em] border border-[rgba(255,255,255,0.08)] text-[#5B616E] hover:text-white hover:border-[rgba(255,255,255,0.15)] flex items-center transition-colors"
+                href={LINKS.docs}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-9 px-5 text-[11px] font-mono uppercase tracking-[0.08em] border border-[rgba(255,255,255,0.08)] text-[#4D9FFF] hover:text-white hover:border-[rgba(255,255,255,0.15)] flex items-center transition-colors pointer-events-auto"
               >
                 Read Docs
               </a>
             </div>
-          </motion.div>
+          </div>
         </div>
+      </div>
 
+      {/* === MAIN GRID === */}
+      <div className="max-w-[1200px] mx-auto border-x border-[rgba(255,255,255,0.04)]">
         {/* STATS ROW */}
         <div className="dashboard grid-cols-3 border-b border-[rgba(255,255,255,0.04)]">
           {[
@@ -129,17 +269,13 @@ export default function Home() {
             { val: "90%", label: "mineable", coord: "01.01" },
             { val: "10%", label: "lp reserve", coord: "01.02" },
           ].map((s, i) => (
-            <motion.div
-              key={s.label}
-              {...fade(i * 0.05)}
-              className="p-5 relative"
-            >
+            <div key={s.label} className="p-5 relative">
               <Coord value={s.coord} />
               <p className="text-[32px] font-bold tracking-[-0.03em] mb-1 font-mono">
                 {s.val}
               </p>
               <Label>{s.label}</Label>
-            </motion.div>
+            </div>
           ))}
         </div>
 
@@ -148,11 +284,7 @@ export default function Home() {
           id="protocol"
           className="grid grid-cols-12 border-b border-[rgba(255,255,255,0.04)]"
         >
-          {/* What is APoW */}
-          <motion.div
-            {...fade()}
-            className="col-span-7 p-6 relative border-r border-[rgba(255,255,255,0.04)]"
-          >
+          <div className="col-span-7 p-6 relative border-r border-[rgba(255,255,255,0.04)]">
             <Coord value="02.00" />
             <Label>Protocol</Label>
             <h2 className="text-[22px] font-bold tracking-[-0.03em] mt-2 mb-3">
@@ -161,17 +293,13 @@ export default function Home() {
             <p className="text-[12px] text-[#717886] leading-[1.7] max-w-[440px]">
               {PROTOCOL.description}
             </p>
-            <p className="text-[10px] font-mono text-[#32353D] mt-4">
+            <p className="text-[10px] font-mono text-[#4D9FFF] mt-4">
               {"// AI-native consensus"}
             </p>
-          </motion.div>
+          </div>
 
-          {/* Dual proof cards stacked */}
           <div className="col-span-5 grid grid-rows-2">
-            <motion.div
-              {...fade(0.1)}
-              className="p-5 relative border-b border-[rgba(255,255,255,0.04)]"
-            >
+            <div className="p-5 relative border-b border-[rgba(255,255,255,0.04)]">
               <Coord value="02.01" />
               <div className="flex items-center gap-2 mb-2">
                 <div
@@ -182,12 +310,12 @@ export default function Home() {
                   SMHL Challenge
                 </span>
               </div>
-              <p className="text-[10px] text-[#5B616E] leading-[1.7]">
-                6 simultaneous constraints — word count, char positions, ASCII
+              <p className="text-[10px] text-[#4D9FFF] leading-[1.7]">
+                6 simultaneous constraints: word count, char positions, ASCII
                 sums, string length. Only AI solves it in 20s.
               </p>
-            </motion.div>
-            <motion.div {...fade(0.15)} className="p-5 relative">
+            </div>
+            <div className="p-5 relative">
               <Coord value="02.02" />
               <div className="flex items-center gap-2 mb-2">
                 <div
@@ -198,24 +326,21 @@ export default function Home() {
                   Cryptographic PoW
                 </span>
               </div>
-              <p className="text-[10px] text-[#5B616E] leading-[1.7]">
+              <p className="text-[10px] text-[#4D9FFF] leading-[1.7]">
                 Find a nonce that hashes below the mining target. Difficulty
                 auto-adjusts every 64 mines for 10s block interval.
               </p>
-            </motion.div>
+            </div>
           </div>
         </div>
 
-        {/* HALVING ROW */}
-        <motion.div
-          {...fade()}
-          className="border-b border-[rgba(255,255,255,0.04)] p-6 relative"
-        >
+        {/* EMISSION ROW */}
+        <div className="border-b border-[rgba(255,255,255,0.04)] p-6 relative overflow-x-auto sm:overflow-x-visible">
           <Coord value="03.00" />
           <Label>Emission Schedule · 10% decay per era</Label>
-          <div className="flex items-end gap-1 mt-4">
+          <div className="flex items-start gap-1 mt-4 min-w-[520px] sm:min-w-0">
             {EMISSION_ERAS.map((era, i) => (
-              <div key={era.era} className="flex items-end gap-1 flex-1">
+              <div key={era.era} className="flex items-start gap-1 flex-1">
                 <div className="flex-1">
                   <div
                     className={`h-[3px] mb-2 ${
@@ -233,12 +358,12 @@ export default function Home() {
                       className={`text-[18px] font-bold font-mono tracking-tight ${
                         era.status === "active"
                           ? "text-white"
-                          : "text-[#32353D]"
+                          : "text-[#4D9FFF]"
                       }`}
                     >
                       {era.reward}
                     </span>
-                    <span className="text-[9px] font-mono text-[#32353D]">
+                    <span className="text-[9px] font-mono text-[#4D9FFF]">
                       {era.mineRange}
                     </span>
                   </div>
@@ -249,23 +374,19 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* MINING RIGS ROW */}
         <div className="border-b border-[rgba(255,255,255,0.04)]">
           <div className="px-6 pt-5 pb-1 flex items-baseline justify-between">
             <Label>Mining Rigs · ERC-8004</Label>
-            <span className="text-[9px] font-mono text-[#32353D]">
-              100K max · inverse bonding curve
+            <span className="text-[9px] font-mono text-[#4D9FFF]">
+              10K max · inverse bonding curve
             </span>
           </div>
           <div className="dashboard grid-cols-5">
             {RARITY_TIERS.map((tier, i) => (
-              <motion.div
-                key={tier.name}
-                {...fade(i * 0.04)}
-                className="p-4 relative group"
-              >
+              <div key={tier.name} className="p-4 relative group">
                 <div className="flex items-center gap-1.5 mb-3">
                   <div
                     className="w-1.5 h-1.5 rounded-full flex-shrink-0"
@@ -284,38 +405,29 @@ export default function Home() {
                 <p className="text-[24px] font-bold font-mono tracking-tight leading-none mb-1">
                   {tier.multiplier}
                 </p>
-                <span className="text-[9px] font-mono text-[#32353D]">
+                <span className="text-[9px] font-mono text-[#4D9FFF]">
                   {tier.dropRate} drop
                 </span>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
 
         {/* BONDING CURVE + MINT PRICING ROW */}
-        <div className="grid grid-cols-12 border-b border-[rgba(255,255,255,0.04)]">
-          {/* Inverse bonding curve chart */}
-          <motion.div
-            {...fade()}
-            className="col-span-7 p-6 relative border-r border-[rgba(255,255,255,0.04)]"
-          >
+        <div className="grid grid-cols-1 sm:grid-cols-12 border-b border-[rgba(255,255,255,0.04)]">
+          <div className="sm:col-span-7 p-6 relative sm:border-r border-b sm:border-b-0 border-[rgba(255,255,255,0.04)] flex flex-col">
             <Coord value="04.00" />
             <Label>Inverse Bonding Curve · Sniper Protection</Label>
-            <p className="text-[10px] text-[#5B616E] leading-[1.7] mt-2 mb-4 max-w-[400px]">
-              Linear inverse pricing — mint price decreases with supply. EOA-only minting + 20s SMHL challenge window blocks contract snipers. No bots. No unfair advantage.
+            <p className="text-[10px] text-[#4D9FFF] leading-[1.7] mt-2 mb-4 max-w-[400px]">
+              Linear inverse pricing - mint price decreases with supply. EOA-only minting + 20s SMHL challenge window blocks contract snipers. No bots. No unfair advantage.
             </p>
-            {/* SVG chart */}
-            <svg viewBox="0 0 400 160" className="w-full h-auto" fill="none">
-              {/* Grid lines */}
+            <svg viewBox="0 0 400 160" className="w-full flex-1 min-h-[160px]" preserveAspectRatio="xMidYMid meet" fill="none">
               {[0, 40, 80, 120, 160].map((y) => (
                 <line key={y} x1="40" y1={y} x2="390" y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
               ))}
               {[40, 127, 215, 302, 390].map((x) => (
                 <line key={x} x1={x} y1="0" x2={x} y2="160" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
               ))}
-              {/* Linear curve — price = maxPrice * remaining / maxSupply, floored at minPrice */}
-              {/* 0.001 ETH at mint 0 → linear down → 0.00005 ETH floor at ~95K, flat to 100K */}
-              {/* Y axis: 0.001 = y12, 0.00005 = y148. X axis: 0 = x40, 100K = x390 */}
               <path
                 d="M 40 12 L 372 148 L 390 148"
                 stroke="#0052FF"
@@ -323,13 +435,11 @@ export default function Home() {
                 fill="none"
                 style={{ filter: "drop-shadow(0 0 6px rgba(0,82,255,0.4))" }}
               />
-              {/* Fill under curve */}
               <path
                 d="M 40 12 L 372 148 L 390 148 L 390 160 L 40 160 Z"
                 fill="url(#curveGrad)"
                 opacity="0.15"
               />
-              {/* Floor line */}
               <line x1="40" y1="148" x2="390" y2="148" stroke="#0052FF" strokeWidth="0.5" opacity="0.2" strokeDasharray="3 3" />
               <defs>
                 <linearGradient id="curveGrad" x1="0" y1="0" x2="0" y2="1">
@@ -337,52 +447,45 @@ export default function Home() {
                   <stop offset="100%" stopColor="#0052FF" stopOpacity="0" />
                 </linearGradient>
               </defs>
-              {/* Axis labels */}
               <text x="40" y="155" fill="#32353D" fontSize="7" fontFamily="monospace">0</text>
-              <text x="370" y="155" fill="#32353D" fontSize="7" fontFamily="monospace">100K</text>
+              <text x="370" y="155" fill="#32353D" fontSize="7" fontFamily="monospace">10K</text>
               <text x="6" y="16" fill="#32353D" fontSize="7" fontFamily="monospace">{BONDING_CURVE.maxPrice}</text>
               <text x="2" y="148" fill="#32353D" fontSize="7" fontFamily="monospace">{BONDING_CURVE.minPrice}</text>
-              {/* Current price marker */}
               <circle cx="52" cy="12" r="3" fill="#0052FF" style={{ filter: "drop-shadow(0 0 4px #0052FF)" }} />
             </svg>
-          </motion.div>
+          </div>
 
-          {/* Mint stats */}
-          <div className="col-span-5 grid grid-rows-3">
-            <motion.div {...fade(0.05)} className="p-5 relative border-b border-[rgba(255,255,255,0.04)]">
+          <div className="sm:col-span-5 grid grid-cols-3 sm:grid-cols-1 sm:grid-rows-3">
+            <div className="p-5 relative border-b sm:border-b border-r sm:border-r-0 border-[rgba(255,255,255,0.04)]">
               <Coord value="04.01" />
               <Label>Start Price</Label>
               <p className="text-[24px] font-bold font-mono tracking-tight mt-1">
-                {BONDING_CURVE.maxPrice} <span className="text-[12px] text-[#5B616E]">{BONDING_CURVE.currency}</span>
+                {BONDING_CURVE.maxPrice} <span className="text-[12px] text-[#4D9FFF]">{BONDING_CURVE.currency}</span>
               </p>
-            </motion.div>
-            <motion.div {...fade(0.1)} className="p-5 relative border-b border-[rgba(255,255,255,0.04)]">
+            </div>
+            <div className="p-5 relative border-b sm:border-b border-r sm:border-r-0 border-[rgba(255,255,255,0.04)]">
               <Coord value="04.02" />
               <Label>Floor Price</Label>
               <p className="text-[24px] font-bold font-mono tracking-tight mt-1">
-                {BONDING_CURVE.minPrice} <span className="text-[12px] text-[#5B616E]">{BONDING_CURVE.currency}</span>
+                {BONDING_CURVE.minPrice} <span className="text-[12px] text-[#4D9FFF]">{BONDING_CURVE.currency}</span>
               </p>
-            </motion.div>
-            <motion.div {...fade(0.15)} className="p-5 relative">
+            </div>
+            <div className="p-5 relative">
               <Coord value="04.03" />
               <Label>Max Rig Supply</Label>
               <p className="text-[24px] font-bold font-mono tracking-tight mt-1">
                 {BONDING_CURVE.maxSupply}
               </p>
-              <p className="text-[9px] font-mono text-[#32353D] mt-1">
+              <p className="text-[9px] font-mono text-[#4D9FFF] mt-1">
                 // price decreases as supply increases
               </p>
-            </motion.div>
+            </div>
           </div>
         </div>
 
         {/* HOW IT WORKS + SMHL ROW */}
         <div className="grid grid-cols-12 border-b border-[rgba(255,255,255,0.04)]">
-          {/* Mining flow */}
-          <motion.div
-            {...fade()}
-            className="col-span-5 p-6 relative border-r border-[rgba(255,255,255,0.04)]"
-          >
+          <div className="col-span-5 p-6 relative border-r border-[rgba(255,255,255,0.04)]">
             <Coord value="05.00" />
             <Label>Mining Flow</Label>
             <div className="mt-4 space-y-4">
@@ -392,7 +495,7 @@ export default function Home() {
                     className={`text-[10px] font-mono font-bold w-5 h-5 flex items-center justify-center flex-shrink-0 ${
                       step.step === 1
                         ? "bg-[#0052FF] text-white"
-                        : "text-[#32353D] border border-[rgba(255,255,255,0.06)]"
+                        : "text-[#4D9FFF] border border-[rgba(255,255,255,0.06)]"
                     }`}
                   >
                     {String(step.step).padStart(2, "0")}
@@ -401,26 +504,21 @@ export default function Home() {
                     <p className="text-[11px] font-medium mb-0.5">
                       {step.title}
                     </p>
-                    <p className="text-[10px] text-[#5B616E] leading-[1.6]">
+                    <p className="text-[10px] text-[#4D9FFF] leading-[1.6]">
                       {step.desc}
                     </p>
                   </div>
                 </div>
               ))}
             </div>
-          </motion.div>
+          </div>
 
-          {/* SMHL example */}
-          <motion.div
-            {...fade(0.1)}
-            className="col-span-7 p-6 relative font-mono"
-          >
+          <div className="col-span-7 p-6 relative font-mono">
             <Coord value="05.01" />
             <Label>SMHL Example</Label>
-
             <div className="mt-4 space-y-3">
               <div>
-                <p className="text-[9px] text-[#32353D] uppercase tracking-[0.15em] mb-1">
+                <p className="text-[9px] text-[#4D9FFF] uppercase tracking-[0.15em] mb-1">
                   {">"} challenge
                 </p>
                 <pre className="text-[10px] text-[#0052FF] leading-[1.7] bg-[#0052FF]/[0.03] border border-[#0052FF]/[0.06] p-3 overflow-x-auto">
@@ -428,25 +526,25 @@ export default function Home() {
                 </pre>
               </div>
               <div>
-                <p className="text-[9px] text-[#32353D] uppercase tracking-[0.15em] mb-1">
+                <p className="text-[9px] text-[#4D9FFF] uppercase tracking-[0.15em] mb-1">
                   {">"} solution
                 </p>
                 <pre className="text-[10px] text-[#66C800] leading-[1.7] bg-[#66C800]/[0.03] border border-[#66C800]/[0.06] p-3">
                   {SMHL_EXAMPLE.solution}
                 </pre>
               </div>
-              <p className="text-[9px] text-[#32353D] leading-[1.6]">
+              <p className="text-[9px] text-[#4D9FFF] leading-[1.6]">
                 // AI generates natural language satisfying all 6 constraints
                 within 20s window
               </p>
             </div>
-          </motion.div>
+          </div>
         </div>
 
         {/* LP ROW */}
         <div className="dashboard grid-cols-3 border-b border-[rgba(255,255,255,0.04)]">
           {LP_FEATURES.map((f, i) => (
-            <motion.div key={f.title} {...fade(i * 0.05)} className="p-5 relative">
+            <div key={f.title} className="p-5 relative">
               <Coord value={`06.0${i}`} />
               <div className="flex items-center gap-2 mb-2">
                 <div
@@ -457,40 +555,36 @@ export default function Home() {
                   {f.title}
                 </span>
               </div>
-              <p className="text-[10px] text-[#5B616E] leading-[1.7] mb-2">
+              <p className="text-[10px] text-[#4D9FFF] leading-[1.7] mb-2">
                 {f.desc}
               </p>
               <span className="text-[9px] font-mono text-[#0052FF]/60">
                 {f.detail}
               </span>
-            </motion.div>
+            </div>
           ))}
         </div>
 
         {/* NO RUG CALLOUT */}
-        <motion.div
-          {...fade()}
-          className="border-b border-[rgba(255,255,255,0.04)] px-6 py-3 flex items-center justify-between"
-        >
-          <p className="text-[10px] font-mono text-[#32353D]">
+        <div className="border-b border-[rgba(255,255,255,0.04)] px-6 py-3 flex items-center justify-between">
+          <p className="text-[10px] font-mono text-[#4D9FFF]">
             // no pre-mine. no team tokens. protocol-owned liquidity.
           </p>
           <div className="flex gap-3">
             {["Uniswap V3", "UNCX Lock", "Permanent"].map((tag) => (
               <span
                 key={tag}
-                className="text-[8px] font-mono text-[#5B616E] border border-[rgba(255,255,255,0.04)] px-1.5 py-0.5 uppercase tracking-[0.1em]"
+                className="text-[8px] font-mono text-[#4D9FFF] border border-[rgba(255,255,255,0.04)] px-1.5 py-0.5 uppercase tracking-[0.1em]"
               >
                 {tag}
               </span>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* CTA ROW */}
-        <motion.div
+        <div
           id="get-started"
-          {...fade()}
           className="border-b border-[rgba(255,255,255,0.04)] p-8 sm:p-12 relative"
         >
           <Coord value="07.00" />
@@ -507,36 +601,43 @@ export default function Home() {
                 href={LINKS.mint}
                 className="h-9 px-5 text-[11px] font-mono uppercase tracking-[0.08em] bg-[#0052FF] hover:bg-[#0047E0] text-white flex items-center transition-colors shadow-[0_0_24px_rgba(0,82,255,0.25)]"
               >
-                Mint a Rig
+                START MINING
               </a>
               <a
                 href={LINKS.docs}
-                className="h-9 px-5 text-[11px] font-mono uppercase tracking-[0.08em] border border-[rgba(255,255,255,0.08)] text-[#5B616E] hover:text-white hover:border-[rgba(255,255,255,0.15)] flex items-center transition-colors"
+                className="h-9 px-5 text-[11px] font-mono uppercase tracking-[0.08em] border border-[rgba(255,255,255,0.08)] text-[#4D9FFF] hover:text-white hover:border-[rgba(255,255,255,0.15)] flex items-center transition-colors"
               >
                 Read Docs
               </a>
             </div>
             <div className="flex gap-4">
-              {["Docs", "GitHub", "Twitter", "Basescan"].map((l) => (
+              {[
+                { label: "Docs", href: LINKS.docs },
+                { label: "GitHub", href: LINKS.github },
+                { label: "Twitter", href: LINKS.twitter },
+                { label: "Basescan", href: LINKS.basescan },
+              ].map((l) => (
                 <a
-                  key={l}
-                  href="#"
-                  className="text-[10px] font-mono text-[#32353D] hover:text-[#0052FF] uppercase tracking-[0.1em] transition-colors"
+                  key={l.label}
+                  href={l.href}
+                  target={l.href.startsWith("http") ? "_blank" : undefined}
+                  rel={l.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                  className="text-[10px] font-mono text-[#4D9FFF] hover:text-[#0052FF] uppercase tracking-[0.1em] transition-colors"
                 >
-                  {l}
+                  {l.label}
                 </a>
               ))}
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* FOOTER */}
         <div className="px-5 h-10 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-[11px] font-semibold tracking-[-0.01em] text-[#5B616E]">
+            <span className="text-[11px] font-semibold tracking-[-0.01em] text-[#4D9FFF]">
               APoW
             </span>
-            <span className="text-[10px] font-mono text-[#32353D]">
+            <span className="text-[10px] font-mono text-[#4D9FFF]">
               Agentic Proof of Work
             </span>
           </div>

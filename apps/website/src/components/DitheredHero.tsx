@@ -1,15 +1,16 @@
 "use client";
 
-import { useRef, useMemo } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { EffectComposer, Bloom } from "@react-three/postprocessing";
+import { useRef, useMemo, useCallback } from "react";
+import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 
-const vertexShader = `
+const ditherVertexShader = `
   varying vec3 vNormal;
   varying vec3 vViewPosition;
+  varying vec2 vUv;
 
   void main() {
+    vUv = uv;
     vNormal = normalize(normalMatrix * normal);
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
     vViewPosition = -mvPosition.xyz;
@@ -17,17 +18,20 @@ const vertexShader = `
   }
 `;
 
-const fragmentShader = `
+const ditherFragmentShader = `
   precision highp float;
 
   uniform float uTime;
+  uniform sampler2D uTexture;
   uniform vec3 uColor;
   uniform float uDitherScale;
+  uniform float uLogoScale;
+  uniform float uOpacity;
 
   varying vec3 vNormal;
   varying vec3 vViewPosition;
+  varying vec2 vUv;
 
-  // Bayer dithering via recursive mathematical formulation
   float bayer2(vec2 a) {
     a = floor(a);
     return fract(dot(a, vec2(0.5, a.y * 0.75)));
@@ -45,94 +49,245 @@ const fragmentShader = `
     vec3 normal = normalize(vNormal);
     vec3 viewDir = normalize(vViewPosition);
 
-    // Lambertian diffuse
     float diffuse = max(dot(normal, viewDir), 0.0);
-
-    // Fresnel rim glow — strong for holographic look
     float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 2.5);
-
-    // Pulsing energy
     float pulse = sin(uTime * 1.5) * 0.1 + 0.9;
 
-    // Combined luminance
     float luminance = diffuse * 0.4 + fresnel * 1.0 + 0.05;
     luminance *= pulse;
 
-    // Ordered dithering (8x8 Bayer)
     vec2 pixelPos = gl_FragCoord.xy / uDitherScale;
     float threshold = bayer8(pixelPos);
     float dithered = step(threshold, luminance);
 
-    // Output color — exceeds 1.0 for bloom pickup
-    vec3 baseColor = uColor * dithered;
-    vec3 rimGlow = uColor * fresnel * 3.5 * dithered;
+    // Scale UV from center for smaller logo
+    vec2 centeredUv = (vUv - 0.5) * uLogoScale + 0.5;
+    vec4 texColor = texture2D(uTexture, centeredUv);
+
+    vec3 baseColor = mix(uColor * 0.3, texColor.rgb, texColor.a) * dithered;
+    vec3 rimGlow = uColor * fresnel * 3.0 * dithered;
     vec3 finalColor = baseColor + rimGlow;
 
-    // Wireframe edge hint via normal discontinuity
     float edgeFactor = 1.0 - abs(dot(normal, viewDir));
     finalColor += uColor * 0.5 * smoothstep(0.8, 1.0, edgeFactor);
+    finalColor += uColor * 0.1 * fresnel;
 
-    // Inner core glow — always visible even without dither
-    finalColor += uColor * 0.08 * fresnel;
-
-    gl_FragColor = vec4(finalColor, 1.0);
+    gl_FragColor = vec4(finalColor, uOpacity);
   }
 `;
 
-function DitheredIcosahedron() {
+// Connection line from center to miner
+function ConnectionLine({ targetPos }: { targetPos: THREE.Vector3 }) {
+  const lineRef = useRef<THREE.Line>(null);
+  const points = useMemo(() => [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0)], []);
+  const geometry = useMemo(() => new THREE.BufferGeometry().setFromPoints(points), [points]);
+  const material = useMemo(() => new THREE.LineBasicMaterial({ color: "#0052FF", opacity: 0.15, transparent: true }), []);
+  const line = useMemo(() => new THREE.Line(geometry, material), [geometry, material]);
+
+  useFrame(() => {
+    if (lineRef.current) {
+      const positions = lineRef.current.geometry.attributes.position;
+      positions.setXYZ(1, targetPos.x, targetPos.y, targetPos.z);
+      positions.needsUpdate = true;
+    }
+  });
+
+  return <primitive object={line} ref={lineRef} />;
+}
+
+// Mining particle traveling from center to miner
+function MiningToken({ targetPos, delay }: { targetPos: THREE.Vector3; delay: number }) {
   const meshRef = useRef<THREE.Mesh>(null);
 
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
+      uTexture: { value: null },
       uColor: { value: new THREE.Color("#0052FF") },
       uDitherScale: { value: 2.5 },
+      uLogoScale: { value: 1.0 },
+      uOpacity: { value: 0.8 },
     }),
     []
   );
 
   useFrame((state) => {
     if (meshRef.current) {
-      meshRef.current.rotation.y += 0.004;
-      meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.3) * 0.15;
-      meshRef.current.rotation.z = Math.cos(state.clock.elapsedTime * 0.2) * 0.08;
+      const t = (state.clock.elapsedTime + delay) % 3;
+      const progress = t / 3;
+
+      meshRef.current.position.lerpVectors(new THREE.Vector3(0, 0, 0), targetPos, progress);
+
+      const scale = 0.06 * (1 - Math.abs(progress - 0.5) * 0.5);
+      meshRef.current.scale.setScalar(scale);
+
+      const opacity = Math.sin(progress * Math.PI);
       uniforms.uTime.value = state.clock.elapsedTime;
+      uniforms.uOpacity.value = opacity * 0.8;
     }
   });
 
   return (
-    <mesh ref={meshRef} position={[2.2, 0, 0]}>
-      <icosahedronGeometry args={[1.8, 5]} />
+    <mesh ref={meshRef}>
+      <sphereGeometry args={[1, 32, 32]} />
       <shaderMaterial
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
+        vertexShader={ditherVertexShader}
+        fragmentShader={ditherFragmentShader}
         uniforms={uniforms}
         side={THREE.DoubleSide}
         toneMapped={false}
-        transparent={false}
+        transparent
       />
     </mesh>
   );
 }
 
-export default function DitheredHero() {
+// Miner node
+function MinerNode({ angle, radius, speed, index }: { angle: number; radius: number; speed: number; index: number }) {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const position = useMemo(() => new THREE.Vector3(), []);
+
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uTexture: { value: null },
+      uColor: { value: new THREE.Color("#0052FF") },
+      uDitherScale: { value: 2.5 },
+      uLogoScale: { value: 1.0 },
+      uOpacity: { value: 1.0 },
+    }),
+    []
+  );
+
+  useFrame((state) => {
+    if (meshRef.current) {
+      const t = state.clock.elapsedTime * speed + angle;
+      position.x = Math.cos(t) * radius;
+      position.y = Math.sin(t * 0.7) * radius * 0.4;
+      position.z = Math.sin(t) * radius;
+      meshRef.current.position.copy(position);
+      uniforms.uTime.value = state.clock.elapsedTime;
+    }
+  });
+
   return (
-    <Canvas
-      camera={{ position: [0, 0, 4.5], fov: 45 }}
-      gl={{ antialias: false, alpha: true }}
-      style={{ background: "transparent" }}
-      dpr={[1, 2]}
-    >
-      <DitheredIcosahedron />
-      <EffectComposer>
-        <Bloom
-          intensity={1.2}
-          luminanceThreshold={0.4}
-          luminanceSmoothing={0.3}
-          radius={0.4}
-          mipmapBlur
+    <group>
+      <mesh ref={meshRef}>
+        <sphereGeometry args={[0.12, 32, 32]} />
+        <shaderMaterial
+          vertexShader={ditherVertexShader}
+          fragmentShader={ditherFragmentShader}
+          uniforms={uniforms}
+          side={THREE.DoubleSide}
+          toneMapped={false}
         />
-      </EffectComposer>
-    </Canvas>
+      </mesh>
+      <ConnectionLine targetPos={position} />
+      <MiningToken targetPos={position} delay={index * 0.4} />
+    </group>
+  );
+}
+
+// Central dithered sphere
+function CentralOrb({ onReady }: { onReady?: () => void }) {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const firedRef = useRef(false);
+
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uTexture: { value: null },
+      uColor: { value: new THREE.Color("#0052FF") },
+      uDitherScale: { value: 2.5 },
+      uLogoScale: { value: 1.0 },
+      uOpacity: { value: 1.0 },
+    }),
+    []
+  );
+
+  useFrame((state) => {
+    if (meshRef.current) {
+      uniforms.uTime.value = state.clock.elapsedTime;
+
+      if (!firedRef.current) {
+        firedRef.current = true;
+        onReady?.();
+      }
+    }
+  });
+
+  return (
+    <mesh ref={meshRef} position={[0, 0, 0]}>
+      <sphereGeometry args={[1, 64, 64]} />
+      <shaderMaterial
+        vertexShader={ditherVertexShader}
+        fragmentShader={ditherFragmentShader}
+        uniforms={uniforms}
+        side={THREE.DoubleSide}
+        toneMapped={false}
+      />
+    </mesh>
+  );
+}
+
+// Mining network scene
+function MiningNetwork({ onReady }: { onReady?: () => void }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const stableOnReady = useCallback(() => onReady?.(), [onReady]);
+
+  // 10 miner nodes - spread out for better distribution
+  const miners = useMemo(() => [
+    { angle: (0 * Math.PI) / 5, radius: 2.8, speed: 0.03 },    // 0°
+    { angle: (1 * Math.PI) / 5, radius: 2.6, speed: 0.035 },   // 36°
+    { angle: (2 * Math.PI) / 5, radius: 2.9, speed: 0.028 },   // 72°
+    { angle: (3 * Math.PI) / 5, radius: 2.7, speed: 0.032 },   // 108°
+    { angle: 1.28 * Math.PI, radius: 2.5, speed: 0.029 },      // 230°
+    { angle: Math.PI, radius: 3.0, speed: 0.033 },             // 180°
+    { angle: 1.11 * Math.PI, radius: 2.6, speed: 0.031 },      // 200° - moved from 216° to spread out
+    { angle: (7 * Math.PI) / 5, radius: 2.8, speed: 0.034 },   // 252°
+    { angle: (8 * Math.PI) / 5, radius: 2.4, speed: 0.027 },   // 288°
+    { angle: (9 * Math.PI) / 5, radius: 2.7, speed: 0.036 },   // 324°
+  ], []);
+
+  return (
+    <group ref={groupRef} position={[2.2, 0, 0]}>
+        <ambientLight intensity={0.3} />
+        <pointLight position={[3, 3, 3]} intensity={0.6} color="#0052FF" />
+        <pointLight position={[-3, -3, 3]} intensity={0.3} color="#0052FF" />
+
+        <CentralOrb onReady={stableOnReady} />
+
+        {miners.map((miner, i) => (
+          <MinerNode key={i} {...miner} index={i} />
+        ))}
+      </group>
+  );
+}
+
+export default function DitheredHero({ onReady }: { onReady?: () => void }) {
+  return (
+    <div className="w-full h-full relative">
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          right: "-5%",
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: "55%",
+          height: "80%",
+          background: "radial-gradient(ellipse at center, rgba(0,82,255,0.2) 0%, rgba(0,82,255,0.08) 30%, rgba(0,82,255,0.03) 50%, transparent 70%)",
+          filter: "blur(40px)",
+          zIndex: 0,
+        }}
+      />
+      <Canvas
+        camera={{ position: [-2, 0, 0.3], fov: 50 }}
+        gl={{ antialias: false, alpha: true }}
+        style={{ background: "transparent", position: "relative", zIndex: 1, pointerEvents: "auto" }}
+        dpr={[1, 2]}
+      >
+        <MiningNetwork onReady={onReady} />
+      </Canvas>
+    </div>
   );
 }
