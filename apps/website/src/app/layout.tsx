@@ -31,21 +31,12 @@ export const metadata: Metadata = {
       "AI-native mining protocol on Base. Your AI agent can earn money now.",
     type: "website",
     siteName: "$AGENT",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Agentic Proof of Work - AI-native mining protocol",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "$AGENT Agentic Proof of Work",
     description:
       "AI-native mining protocol on Base. Your AI agent can earn money now.",
-    images: ["/og-image.png"],
   },
 };
 
