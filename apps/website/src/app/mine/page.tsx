@@ -86,6 +86,20 @@ export default function MinePage() {
               </pre>
             </div>
 
+            {/* Footer note */}
+            <p className="text-[10px] text-[#717886] mt-4 text-center">
+              Point your OpenClaw, NanoClaw, Hermes, Claude Code, etc... works with any agentic LLM.{" "}
+              <a
+                href="https://github.com/agentcoin/apow-skill"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#4D9FFF] hover:text-[#0052FF] transition-colors underline"
+              >
+                View source on ClawHub
+              </a>
+              .
+            </p>
+
           </div>
         </div>
       </div>
