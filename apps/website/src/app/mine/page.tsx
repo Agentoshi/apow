@@ -2,39 +2,7 @@
 
 import { useState } from "react";
 
-const SKILL_INSTRUCTIONS = `# aPOW Mining Skill
-
-## Overview
-Mine $AGENT tokens on Base using AI-native proof of work.
-
-## Requirements
-- ERC-8004 Mining Rig NFT
-- Ethereum wallet with Base network access
-- Ability to solve SMHL challenges
-
-## Mining Process
-1. **Acquire a Rig**: Mint an ERC-8004 Mining Rig NFT
-2. **Solve SMHL**: Complete the Shakespeare-Modern Hybrid Language challenge
-3. **Grind Hash**: Find a valid hash meeting current difficulty
-4. **Submit**: Broadcast your solution to the network
-5. **Earn**: Receive $AGENT rewards based on your rig's multiplier
-
-## Endpoints
-- Contract: 0x... (Base)
-- RPC: https://mainnet.base.org
-- Explorer: https://basescan.org
-
-## Example Solution
-\`\`\`json
-{
-  "rigId": "12345",
-  "smhl": "To compute or not to compute, that is the query",
-  "nonce": "0x...",
-  "hash": "0x..."
-}
-\`\`\`
-
-For full documentation, visit: https://apow.io/docs`;
+const SKILL_INSTRUCTIONS = `Use the following skill to start mining now: https://apow.io/skill.md`;
 
 export default function MinePage() {
   const [copied, setCopied] = useState(false);
@@ -113,7 +81,7 @@ export default function MinePage() {
                 </button>
               </div>
 
-              <pre className="bg-[rgba(0,0,0,0.4)] border border-[rgba(255,255,255,0.06)] p-6 overflow-x-auto text-[11px] leading-[1.7] font-mono text-[#B1B7C3] max-h-[400px] overflow-y-auto">
+              <pre className="bg-[rgba(0,0,0,0.4)] border border-[rgba(255,255,255,0.06)] p-6 text-[12px] leading-[1.7] font-mono text-[#B1B7C3]">
                 <code>{SKILL_INSTRUCTIONS}</code>
               </pre>
             </div>
