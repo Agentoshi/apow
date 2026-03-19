@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useState } from "react";
 
-const DitheredHero = dynamic(() => import("@/components/DitheredHero"), {
+const StaticHero = dynamic(() => import("@/components/StaticHero"), {
   ssr: false,
 });
 
@@ -12,20 +12,23 @@ export default function OGPreview() {
 
   return (
     <div className="w-[1200px] h-[630px] bg-[oklch(0.09_0.005_270)] relative overflow-hidden">
-      {/* WebGL Background - exact same as hero */}
+      {/* Static WebGL Background */}
       <div className="absolute inset-0">
-        <DitheredHero onReady={() => setReady(true)} />
+        <StaticHero onReady={() => setReady(true)} />
       </div>
 
-      {/* Content - exact same as hero section */}
-      <div className="relative z-10 flex flex-col justify-center h-full p-12">
-        <div className="max-w-[560px]">
-          <img src="/logo.png?v=2" alt="APoW" className="w-14 h-14 mb-6" />
-          <h1 className="text-[56px] font-extrabold tracking-[-0.04em] leading-[1] mb-5">
+      {/* Content - centered and prominent */}
+      <div className="relative z-10 flex flex-col justify-center items-center h-full text-center">
+        <div className="flex flex-col items-center">
+          <img src="/logo.png?v=2" alt="APoW" className="w-20 h-20 mb-8" />
+          <h1 className="text-[72px] font-extrabold tracking-[-0.04em] leading-[0.95] whitespace-nowrap">
             Agentic Proof
             <br />
             of Work
           </h1>
+          <p className="text-[13px] font-mono text-[#4D9FFF] mt-6 uppercase tracking-[0.15em]">
+            AI-Native Mining Protocol
+          </p>
         </div>
       </div>
 
