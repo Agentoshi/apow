@@ -95,7 +95,7 @@ function ConnectionLine({ targetPos }: { targetPos: THREE.Vector3 }) {
   return <primitive object={line} ref={lineRef} />;
 }
 
-// Mining particle traveling from center to miner
+// Mining particle traveling from center to miner (coin-shaped)
 function MiningToken({ targetPos, delay }: { targetPos: THREE.Vector3; delay: number }) {
   const meshRef = useRef<THREE.Mesh>(null);
 
@@ -103,10 +103,10 @@ function MiningToken({ targetPos, delay }: { targetPos: THREE.Vector3; delay: nu
     () => ({
       uTime: { value: 0 },
       uTexture: { value: null },
-      uColor: { value: new THREE.Color("#0052FF") },
-      uDitherScale: { value: 2.5 },
+      uColor: { value: new THREE.Color("#00FFFF") }, // Bright cyan
+      uDitherScale: { value: 2.0 },
       uLogoScale: { value: 1.0 },
-      uOpacity: { value: 0.8 },
+      uOpacity: { value: 1.0 },
     }),
     []
   );
@@ -118,18 +118,22 @@ function MiningToken({ targetPos, delay }: { targetPos: THREE.Vector3; delay: nu
 
       meshRef.current.position.lerpVectors(new THREE.Vector3(0, 0, 0), targetPos, progress);
 
-      const scale = 0.06 * (1 - Math.abs(progress - 0.5) * 0.5);
-      meshRef.current.scale.setScalar(scale);
+      // Coin shape - wider on X/Z, thinner on Y
+      const baseScale = 0.08 * (1 - Math.abs(progress - 0.5) * 0.5);
+      meshRef.current.scale.set(baseScale, baseScale * 0.15, baseScale); // Flattened coin
+
+      // Spin the coin as it travels
+      meshRef.current.rotation.y = state.clock.elapsedTime * 3 + delay;
 
       const opacity = Math.sin(progress * Math.PI);
       uniforms.uTime.value = state.clock.elapsedTime;
-      uniforms.uOpacity.value = opacity * 0.8;
+      uniforms.uOpacity.value = opacity * 1.0;
     }
   });
 
   return (
     <mesh ref={meshRef}>
-      <sphereGeometry args={[1, 32, 32]} />
+      <cylinderGeometry args={[1, 1, 0.2, 32]} />
       <shaderMaterial
         vertexShader={ditherVertexShader}
         fragmentShader={ditherFragmentShader}
