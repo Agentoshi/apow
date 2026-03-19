@@ -75,9 +75,19 @@ export default function MinePage() {
               <div className="absolute top-3 right-3 z-10">
                 <button
                   onClick={copyToClipboard}
-                  className="px-3 py-1.5 text-[9px] font-mono uppercase tracking-[0.1em] bg-[rgba(0,82,255,0.1)] hover:bg-[rgba(0,82,255,0.2)] text-[#4D9FFF] border border-[rgba(77,159,255,0.2)] transition-colors"
+                  className="p-2 bg-[rgba(0,82,255,0.1)] hover:bg-[rgba(0,82,255,0.2)] text-[#4D9FFF] border border-[rgba(77,159,255,0.2)] transition-colors"
+                  title={copied ? "Copied!" : "Copy to clipboard"}
                 >
-                  {copied ? "Copied!" : "Copy"}
+                  {copied ? (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M13 4L6 11L3 8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <rect x="5" y="5" width="9" height="9" rx="1" />
+                      <path d="M3 11V3C3 2.44772 3.44772 2 4 2H10" strokeLinecap="round" />
+                    </svg>
+                  )}
                 </button>
               </div>
 
