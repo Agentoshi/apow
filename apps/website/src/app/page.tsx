@@ -71,7 +71,7 @@ function MobileMenu() {
             </a>
           ))}
           <a
-            href="#get-started"
+            href="/mine"
             onClick={() => setOpen(false)}
             className="block px-4 py-2.5 text-[10px] font-mono text-[#0052FF] uppercase tracking-[0.1em] border-t border-[rgba(255,255,255,0.06)] transition-colors"
           >
@@ -210,7 +210,7 @@ export default function Home() {
               </a>
             ))}
             <a
-              href="#get-started"
+              href="/mine"
               className="text-[10px] font-mono text-[#4D9FFF] uppercase tracking-[0.1em] border border-[#4D9FFF]/30 px-3 py-1 hover:bg-[#4D9FFF]/20 transition-colors"
             >
               mine
@@ -242,7 +242,7 @@ export default function Home() {
             </p>
             <div className="flex gap-2">
               <a
-                href="#get-started"
+                href="/mine"
                 className="h-9 px-5 text-[11px] font-mono uppercase tracking-[0.08em] bg-[#0052FF] hover:bg-[#0047E0] text-white flex items-center transition-colors shadow-[0_0_24px_rgba(0,82,255,0.25)] pointer-events-auto"
               >
                 START MINING
