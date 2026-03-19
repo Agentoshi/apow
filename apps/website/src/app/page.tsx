@@ -294,7 +294,7 @@ export default function Home() {
               {PROTOCOL.description}
             </p>
             <p className="text-[10px] font-mono text-[#4D9FFF] mt-4">
-              {"// AI-native consensus"}
+              {"// AI-native mining"}
             </p>
           </div>
 
