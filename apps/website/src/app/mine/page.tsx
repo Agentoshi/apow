@@ -47,7 +47,7 @@ export default function MinePage() {
 
       {/* Main card */}
       <div className="relative z-10 w-full max-w-[800px] mx-4">
-        <div className="relative border border-[rgba(255,255,255,0.08)] bg-[rgba(10,11,13,0.8)] backdrop-blur-xl shadow-2xl">
+        <div className="relative border border-[rgba(255,255,255,0.08)] bg-[rgba(10,11,13,0.10)] backdrop-blur-xl shadow-2xl">
           {/* Top border highlight */}
           <div
             className="absolute top-0 left-0 right-0 h-px"
@@ -86,10 +86,6 @@ export default function MinePage() {
               </pre>
             </div>
 
-            {/* Footer note */}
-            <p className="text-[10px] text-[#717886] mt-4 text-center">
-              Copy these instructions to enable your AI agent to mine $AGENT
-            </p>
           </div>
         </div>
       </div>
