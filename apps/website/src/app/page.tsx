@@ -406,7 +406,7 @@ export default function Home() {
                   {tier.multiplier}
                 </p>
                 <span className="text-[9px] font-mono text-[#4D9FFF]">
-                  {tier.dropRate} drop
+                  {tier.dropRate} chance
                 </span>
               </div>
             ))}
