@@ -98,7 +98,7 @@ export default function MinePage() {
 
             {/* Footer note */}
             <p className="text-[10px] text-[#717886] mt-4 text-center">
-              Point your OpenClaw, NanoClaw, Hermes, Claude Code, etc... works with any agentic LLM.{" "}
+              Point your OpenClaw, NanoClaw, Hermes, Claude Code, Codex, etc... works with any agentic LLM.{" "}
               <a
                 href="https://github.com/agentcoin/apow-skill"
                 target="_blank"
