@@ -103,10 +103,10 @@ function MiningToken({ targetPos, delay }: { targetPos: THREE.Vector3; delay: nu
     () => ({
       uTime: { value: 0 },
       uTexture: { value: null },
-      uColor: { value: new THREE.Color("#00FFFF") }, // Bright cyan
-      uDitherScale: { value: 2.0 },
+      uColor: { value: new THREE.Color("#0052FF") },
+      uDitherScale: { value: 2.5 },
       uLogoScale: { value: 1.0 },
-      uOpacity: { value: 1.0 },
+      uOpacity: { value: 0.8 },
     }),
     []
   );
@@ -123,7 +123,7 @@ function MiningToken({ targetPos, delay }: { targetPos: THREE.Vector3; delay: nu
 
       const opacity = Math.sin(progress * Math.PI);
       uniforms.uTime.value = state.clock.elapsedTime;
-      uniforms.uOpacity.value = opacity * 1.0;
+      uniforms.uOpacity.value = opacity * 0.8;
     }
   });
 
