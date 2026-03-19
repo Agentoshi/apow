@@ -641,7 +641,7 @@ export default function Home() {
               Agentic Proof of Work
             </span>
           </div>
-          <span className="text-[9px] font-mono text-[#0052FF]/40 border border-[#0052FF]/10 px-2 py-0.5 uppercase tracking-[0.1em]">
+          <span className="text-[9px] font-mono text-[#4D9FFF] border border-[#4D9FFF]/20 px-2 py-0.5 uppercase tracking-[0.1em]">
             Built on Base
           </span>
         </div>
