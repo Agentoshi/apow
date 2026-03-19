@@ -37,10 +37,10 @@ export default function MinePage() {
           top: "50%",
           left: "50%",
           transform: "translate(-50%, -50%)",
-          width: "60%",
-          height: "60%",
-          background: "radial-gradient(ellipse at center, rgba(0,82,255,0.15) 0%, rgba(0,82,255,0.05) 40%, transparent 70%)",
-          filter: "blur(60px)",
+          width: "80%",
+          height: "80%",
+          background: "radial-gradient(ellipse at center, rgba(0,82,255,0.35) 0%, rgba(0,82,255,0.15) 40%, rgba(0,82,255,0.05) 60%, transparent 80%)",
+          filter: "blur(80px)",
           zIndex: 0,
         }}
       />
