@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useMemo, useCallback } from "react";
+import { useRef, useMemo, useCallback, useState, useEffect } from "react";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -265,6 +265,21 @@ function MiningNetwork({ onReady }: { onReady?: () => void }) {
 }
 
 export default function DitheredHero({ onReady }: { onReady?: () => void }) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Zoom out camera on mobile
+  const cameraPosition: [number, number, number] = isMobile ? [-3.5, 0, 0.3] : [-2, 0, 0.3];
+
   return (
     <div className="w-full h-full relative">
       <div
@@ -281,7 +296,7 @@ export default function DitheredHero({ onReady }: { onReady?: () => void }) {
         }}
       />
       <Canvas
-        camera={{ position: [-2, 0, 0.3], fov: 50 }}
+        camera={{ position: cameraPosition, fov: 50 }}
         gl={{ antialias: false, alpha: true }}
         style={{ background: "transparent", position: "relative", zIndex: 1, pointerEvents: "auto" }}
         dpr={[1, 2]}
