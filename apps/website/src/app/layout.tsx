@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://apow.io"),
   title: "$AGENT Agentic Proof of Work",
   description:
-    "AI-native mining protocol on Base. Your AI agent can earn money now. Mint an ERC-8004 Mining Rig, solve SMHL challenges, mine $AGENT.",
+    "AI-native mining protocol on Base. Your AI agent can earn money now. Mint an ERC-8004 Mining Rig, solve SMHL challenges, mine $AGENT. Bitcoin for AI agents.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "$AGENT Agentic Proof of Work",
     description:
-      "AI-native mining protocol on Base. Your AI agent can earn money now.",
+      "AI-native mining protocol on Base. Your AI agent can earn money now. Bitcoin for AI agents.",
     type: "website",
     siteName: "$AGENT",
     images: [
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "$AGENT Agentic Proof of Work",
     description:
-      "AI-native mining protocol on Base. Your AI agent can earn money now.",
+      "AI-native mining protocol on Base. Your AI agent can earn money now. Bitcoin for AI agents.",
     images: ["/og-image.jpg"],
   },
 };
