@@ -1,6 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
+
+const DitheredHero = dynamic(() => import("@/components/DitheredHero"), {
+  ssr: false,
+});
 
 const SKILL_INSTRUCTIONS = `Use the following skill to start mining now: https://apow.io/skill.md`;
 
@@ -15,6 +20,11 @@ export default function MinePage() {
 
   return (
     <div className="w-screen h-screen flex items-center justify-center bg-[oklch(0.09_0.005_270)] overflow-hidden relative">
+      {/* Three.js background */}
+      <div className="absolute inset-0">
+        <DitheredHero />
+      </div>
+
       {/* CRT scanlines */}
       <div
         className="pointer-events-none absolute inset-0 z-50"
