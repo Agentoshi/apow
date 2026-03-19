@@ -228,7 +228,7 @@ export default function Home() {
 
         <div className="relative z-10 flex flex-col justify-center h-full min-h-[calc(100vh-44px)] p-8 sm:p-12 max-w-[1200px] mx-auto pointer-events-none">
           <div className="max-w-[560px]">
-            <img src="/logo.png?v=2" alt="APoW" className="w-14 h-14 mb-6 pointer-events-auto" />
+            <img src="/logo.png?v=2" alt="APoW" className="w-28 h-28 mb-6 pointer-events-auto" />
             <h1 className="text-[40px] sm:text-[56px] font-extrabold tracking-[-0.04em] leading-[1] mb-5">
               Agentic Proof
               <br />
