@@ -380,7 +380,7 @@ export default function Home() {
           <div className="px-6 pt-5 pb-1 flex items-baseline justify-between">
             <Label>Mining Rigs · ERC-8004</Label>
             <span className="text-[9px] font-mono text-[#4D9FFF]">
-              10K max · inverse bonding curve
+              10K max · mining reward multiplier
             </span>
           </div>
           <div className="dashboard grid-cols-5">
