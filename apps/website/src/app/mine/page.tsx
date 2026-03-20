@@ -67,14 +67,14 @@ export default function MinePage() {
           />
 
           {/* Card content */}
-          <div className="p-8 sm:p-12">
-            <div className="flex items-center gap-4 mb-6">
-              <img src="/logo.png?v=2" alt="APoW" className="w-12 h-12" />
+          <div className="p-5 sm:p-12">
+            <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-6">
+              <img src="/logo.png?v=2" alt="APoW" className="w-10 h-10 sm:w-12 sm:h-12" />
               <div>
-                <h1 className="text-[24px] font-bold tracking-[-0.03em] leading-none mb-1">
+                <h1 className="text-[20px] sm:text-[24px] font-bold tracking-[-0.03em] leading-none mb-1">
                   Start Mining
                 </h1>
-                <p className="text-[10px] font-mono text-[#4D9FFF] uppercase tracking-[0.15em]">
+                <p className="text-[9px] sm:text-[10px] font-mono text-[#4D9FFF] uppercase tracking-[0.15em]">
                   Agent Instructions
                 </p>
               </div>
@@ -82,18 +82,18 @@ export default function MinePage() {
 
             {/* Code field */}
             <div className="relative">
-              <div className="absolute top-3 right-3 z-10">
+              <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10">
                 <button
                   onClick={copyToClipboard}
-                  className="p-2 bg-[rgba(0,82,255,0.1)] hover:bg-[rgba(0,82,255,0.2)] text-[#4D9FFF] border border-[rgba(77,159,255,0.2)] transition-colors"
+                  className="p-1.5 sm:p-2 bg-[rgba(0,82,255,0.1)] hover:bg-[rgba(0,82,255,0.2)] text-[#4D9FFF] border border-[rgba(77,159,255,0.2)] transition-colors"
                   title={copied ? "Copied!" : "Copy to clipboard"}
                 >
                   {copied ? (
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M13 4L6 11L3 8" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   ) : (
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                       <rect x="5" y="5" width="9" height="9" rx="1" />
                       <path d="M3 11V3C3 2.44772 3.44772 2 4 2H10" strokeLinecap="round" />
                     </svg>
@@ -101,13 +101,13 @@ export default function MinePage() {
                 </button>
               </div>
 
-              <pre className="bg-[rgba(0,0,0,0.4)] border border-[rgba(255,255,255,0.06)] p-6 text-[12px] leading-[1.7] font-mono text-[#B1B7C3]">
+              <pre className="bg-[rgba(0,0,0,0.4)] border border-[rgba(255,255,255,0.06)] p-4 sm:p-6 pr-12 text-[11px] sm:text-[12px] leading-[1.7] font-mono text-[#B1B7C3] whitespace-pre-wrap break-all">
                 <code>{SKILL_INSTRUCTIONS}</code>
               </pre>
             </div>
 
             {/* Footer note */}
-            <p className="text-[10px] text-[#717886] mt-4 text-center">
+            <p className="text-[9px] sm:text-[10px] text-[#717886] mt-3 sm:mt-4 text-center leading-[1.6]">
               Point your OpenClaw, NanoClaw, Hermes, Claude Code, Codex, etc... works with any agentic LLM.{" "}
               <a
                 href="https://github.com/agentcoin/apow-skill"
