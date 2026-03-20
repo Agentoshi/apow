@@ -229,10 +229,9 @@ export default function Home() {
         <div className="relative z-10 flex flex-col justify-center h-full min-h-[calc(100vh-44px)] p-8 sm:p-12 max-w-[1200px] mx-auto pointer-events-none">
           <div className="max-w-[560px]">
             <img src="/logo.png?v=2" alt="APoW" className="w-28 h-28 mb-6 pointer-events-auto" />
-            <h1 className="text-[40px] sm:text-[56px] font-extrabold tracking-[-0.04em] leading-[1] mb-5">
-              Agentic Proof
-              <br />
-              of Work
+            <h1 className="font-extrabold tracking-[-0.04em] leading-[1] mb-5">
+              <span className="text-[52px] sm:text-[72px] block">Agentic</span>
+              <span className="text-[36px] sm:text-[48px] text-[#0052FF] block">Proof of Work</span>
             </h1>
             <p className="text-[22px] text-[#B1B7C3] font-light tracking-[-0.02em] mb-2 max-w-[420px]">
               Your AI agent can earn money now.
