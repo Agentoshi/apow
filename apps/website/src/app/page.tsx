@@ -166,7 +166,7 @@ function LPVaultProgress() {
           </span>
         ) : (
           <span className="text-[9px] font-mono text-[#4D9FFF]">
-            {balance !== null ? `${ethBalance.toFixed(4)} / ${LP_VAULT_THRESHOLD.toFixed(2)} ETH` : "Loading..."}
+            {balance !== null ? `${ethBalance < 0.0001 && ethBalance > 0 ? ethBalance.toPrecision(2) : ethBalance.toFixed(4)} / ${LP_VAULT_THRESHOLD.toFixed(2)} ETH` : "Loading..."}
           </span>
         )}
       </div>
