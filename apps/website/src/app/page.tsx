@@ -120,7 +120,10 @@ function LPVaultProgress() {
   const [balance, setBalance] = useState<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
+  const isPlaceholder = LP_VAULT_ADDRESS === "0x0000000000000000000000000000000000000000";
+
   const fetchBalance = useCallback(async () => {
+    if (isPlaceholder) { setBalance(0); return; }
     try {
       const res = await fetch(BASE_RPC, {
         method: "POST",
@@ -139,13 +142,15 @@ function LPVaultProgress() {
     } catch {
       // Keep last known value on error
     }
-  }, []);
+  }, [isPlaceholder]);
 
   useEffect(() => {
     fetchBalance();
-    intervalRef.current = setInterval(fetchBalance, 30_000);
-    return () => clearInterval(intervalRef.current);
-  }, [fetchBalance]);
+    if (!isPlaceholder) {
+      intervalRef.current = setInterval(fetchBalance, 30_000);
+      return () => clearInterval(intervalRef.current);
+    }
+  }, [fetchBalance, isPlaceholder]);
 
   const ethBalance = balance ?? 0;
   const percent = Math.min((ethBalance / LP_VAULT_THRESHOLD) * 100, 100);
@@ -434,6 +439,9 @@ export default function Home() {
           </div>
         </div>
 
+        {/* LP VAULT PROGRESS */}
+        <LPVaultProgress />
+
         {/* EMISSION ROW */}
         <div className="border-b border-[rgba(255,255,255,0.04)] p-6 relative overflow-x-auto sm:overflow-x-visible">
           <Coord value="03.00" />
@@ -664,9 +672,6 @@ export default function Home() {
             </div>
           ))}
         </div>
-
-        {/* LP VAULT PROGRESS */}
-        <LPVaultProgress />
 
         {/* NO RUG CALLOUT */}
         <div className="border-b border-[rgba(255,255,255,0.04)] px-6 py-3 flex items-center justify-between">
