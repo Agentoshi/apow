@@ -176,7 +176,7 @@ function LPVaultProgress() {
       </div>
 
       <p className="text-[10px] text-[#4D9FFF] leading-[1.7] mb-4 max-w-[600px]">
-        Mint fees accumulate in the LP Vault. When the vault reaches {LP_VAULT_THRESHOLD} ETH, liquidity deploys to Uniswap V3 and locks forever. No admin keys. No rug pulls.
+        Mint fees accumulate in the LP Vault. When the vault reaches {LP_VAULT_THRESHOLD} ETH, liquidity deploys to Uniswap V3 and locks forever.
       </p>
 
       {/* Progress bar */}
