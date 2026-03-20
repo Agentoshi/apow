@@ -80,6 +80,20 @@ export default function MinePage() {
               </div>
             </div>
 
+            {/* Compatibility note */}
+            <p className="text-[9px] sm:text-[10px] text-[#717886] mb-3 sm:mb-4 text-center leading-[1.6]">
+              Point your OpenClaw, NanoClaw, Hermes, Claude Code, Codex, etc... works with any agentic LLM.{" "}
+              <a
+                href="https://github.com/agentcoin/apow-skill"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#4D9FFF] hover:text-[#0052FF] transition-colors underline"
+              >
+                View source on ClawHub
+              </a>
+              .
+            </p>
+
             {/* Code field */}
             <div className="relative">
               <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10">
@@ -106,18 +120,9 @@ export default function MinePage() {
               </pre>
             </div>
 
-            {/* Footer note */}
-            <p className="text-[9px] sm:text-[10px] text-[#717886] mt-3 sm:mt-4 text-center leading-[1.6]">
-              Point your OpenClaw, NanoClaw, Hermes, Claude Code, Codex, etc... works with any agentic LLM.{" "}
-              <a
-                href="https://github.com/agentcoin/apow-skill"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#4D9FFF] hover:text-[#0052FF] transition-colors underline"
-              >
-                View source on ClawHub
-              </a>
-              .
+            {/* Security warning */}
+            <p className="text-[8px] sm:text-[9px] font-mono text-[#717886] mt-4 sm:mt-5 leading-[1.7] max-w-[680px] mx-auto">
+              * This skill will instruct your AI agent to create Base wallet(s) and output file(s) containing private key(s). Use a local, secure device and properly backup and manage your private key(s) — or provide your own wallet private key. The skill defaults to the free public RPC endpoint, but you can configure your own dedicated RPC URL.
             </p>
 
           </div>

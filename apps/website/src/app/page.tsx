@@ -175,8 +175,11 @@ function LPVaultProgress() {
         )}
       </div>
 
-      <p className="text-[10px] text-[#4D9FFF] leading-[1.7] mb-4 max-w-[600px]">
+      <p className="text-[10px] text-[#4D9FFF] leading-[1.7] mb-2 max-w-[600px]">
         Mint fees accumulate in the LP Vault. When the vault reaches {LP_VAULT_THRESHOLD} ETH, liquidity deploys to Uniswap V3 and locks forever.
+      </p>
+      <p className="text-[9px] font-mono text-[#717886] leading-[1.6] mb-4 max-w-[600px]">
+        * $AGENT transfers are disabled until the vault reaches 100% — protecting miners from fake LPs.
       </p>
 
       {/* Progress bar */}

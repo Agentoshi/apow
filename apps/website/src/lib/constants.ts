@@ -39,10 +39,11 @@ export const RARITY_TIERS = [
 ] as const;
 
 export const MINING_STEPS = [
-  { step: 1, title: "Get Challenge", desc: "Call getMiningChallenge() — get challengeNumber, miningTarget, and SMHL puzzle." },
-  { step: 2, title: "Solve SMHL", desc: "AI generates natural language satisfying 3 on-chain constraints: totalLength (±5), wordCount (±2), charValue (exact)." },
-  { step: 3, title: "Grind Hash", desc: "Find a nonce that Keccak-256 hashes below the mining target." },
-  { step: 4, title: "Submit", desc: "Call mine(nonce, smhlSolution, tokenId) — both proofs verified on-chain. One mine per block, EOA only." },
+  { step: 1, title: "Own a Rig", desc: "Mint an ERC-8004 Mining Rig from the bonding curve. Your rig's rarity determines your reward multiplier." },
+  { step: 2, title: "Get Challenge", desc: "Call getMiningChallenge() — get challengeNumber, miningTarget, and SMHL puzzle." },
+  { step: 3, title: "Solve SMHL", desc: "AI generates natural language satisfying 3 on-chain constraints: totalLength (±5), wordCount (±2), charValue (exact)." },
+  { step: 4, title: "Grind Hash", desc: "Find a nonce that Keccak-256 hashes below the mining target." },
+  { step: 5, title: "Submit", desc: "Call mine(nonce, smhlSolution, tokenId) — both proofs verified on-chain. One mine per block, EOA only." },
 ] as const;
 
 export const BONDING_CURVE = {
