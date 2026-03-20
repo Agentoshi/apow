@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import {
   PROTOCOL,
@@ -13,6 +13,11 @@ import {
   BONDING_CURVE,
   LINKS,
 } from "@/lib/constants";
+
+// LP Vault — update post-deploy
+const LP_VAULT_ADDRESS = "0x0000000000000000000000000000000000000000";
+const LP_VAULT_THRESHOLD = 5.0; // ETH
+const BASE_RPC = "https://base-mainnet.g.alchemy.com/v2/nUh5tBofaz9MtKP-oeJ5g";
 
 const DitheredHero = dynamic(() => import("@/components/DitheredHero"), {
   ssr: false,
@@ -106,6 +111,102 @@ function CrtToggle({ on, setOn }: { on: boolean; setOn: (v: boolean) => void }) 
         >
           Off
         </button>
+      </div>
+    </div>
+  );
+}
+
+function LPVaultProgress() {
+  const [balance, setBalance] = useState<number | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
+
+  const fetchBalance = useCallback(async () => {
+    try {
+      const res = await fetch(BASE_RPC, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "eth_getBalance",
+          params: [LP_VAULT_ADDRESS, "latest"],
+        }),
+      });
+      const data = await res.json();
+      if (data.result) {
+        setBalance(parseInt(data.result, 16) / 1e18);
+      }
+    } catch {
+      // Keep last known value on error
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchBalance();
+    intervalRef.current = setInterval(fetchBalance, 30_000);
+    return () => clearInterval(intervalRef.current);
+  }, [fetchBalance]);
+
+  const ethBalance = balance ?? 0;
+  const percent = Math.min((ethBalance / LP_VAULT_THRESHOLD) * 100, 100);
+  const deployed = ethBalance >= LP_VAULT_THRESHOLD;
+
+  return (
+    <div className="border-b border-[rgba(255,255,255,0.04)] p-6 relative">
+      <Coord value="06.10" />
+      <div className="flex items-baseline justify-between mb-2">
+        <Label>Liquidity Launch</Label>
+        {deployed ? (
+          <span className="text-[10px] font-mono text-[#66C800] flex items-center gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#66C800" strokeWidth="2">
+              <path d="M13 4L6 11L3 8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Liquidity Deployed
+          </span>
+        ) : (
+          <span className="text-[9px] font-mono text-[#4D9FFF]">
+            {balance !== null ? `${ethBalance.toFixed(4)} / ${LP_VAULT_THRESHOLD.toFixed(2)} ETH` : "Loading..."}
+          </span>
+        )}
+      </div>
+
+      <p className="text-[10px] text-[#4D9FFF] leading-[1.7] mb-4 max-w-[600px]">
+        Mint fees accumulate in the LP Vault. When the vault reaches {LP_VAULT_THRESHOLD} ETH, liquidity deploys to Uniswap V3 and locks forever. No admin keys. No rug pulls.
+      </p>
+
+      {/* Progress bar */}
+      <div className="relative h-3 bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] overflow-hidden">
+        <div
+          className="absolute inset-y-0 left-0 transition-all duration-1000 ease-out"
+          style={{
+            width: `${percent}%`,
+            background: deployed
+              ? "linear-gradient(90deg, #66C800, #44AA00)"
+              : "linear-gradient(90deg, #0052FF, #4D9FFF)",
+            boxShadow: deployed
+              ? "0 0 12px rgba(102,200,0,0.4)"
+              : "0 0 12px rgba(0,82,255,0.4)",
+          }}
+        >
+          {/* Pulse animation */}
+          {!deployed && (
+            <div
+              className="absolute inset-0 animate-pulse"
+              style={{
+                background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)",
+              }}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Percentage */}
+      <div className="flex items-center justify-between mt-2">
+        <span className="text-[9px] font-mono text-[#717886]">0 ETH</span>
+        <span className="text-[10px] font-mono text-[#4D9FFF] font-medium">
+          {balance !== null ? `${percent.toFixed(1)}%` : "—"}
+        </span>
+        <span className="text-[9px] font-mono text-[#717886]">{LP_VAULT_THRESHOLD} ETH</span>
       </div>
     </div>
   );
@@ -563,6 +664,9 @@ export default function Home() {
             </div>
           ))}
         </div>
+
+        {/* LP VAULT PROGRESS */}
+        <LPVaultProgress />
 
         {/* NO RUG CALLOUT */}
         <div className="border-b border-[rgba(255,255,255,0.04)] px-6 py-3 flex items-center justify-between">
