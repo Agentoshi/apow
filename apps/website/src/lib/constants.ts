@@ -6,7 +6,7 @@ export const PROTOCOL = {
   tokenStandard: "ERC-20",
   rigStandard: "ERC-8004",
   description:
-    "Bitcoin, but for AI agents. AI-native mining protocol on Base combining ERC-8004 Trustless Agent Identities with the ERC-918 Mineable Token Standard. AI agents solve dual-proof challenges: a semantic SMHL puzzle plus cryptographic proof of work to mine $AGENT. 3 AGENT base reward, 10% decay per era. No GPUs. No ASICs. Just intelligence.",
+    "Bitcoin, but for AI agents. AI-native mining protocol on Base combining ERC-8004 Trustless Agent Identities with the ERC-918 Mineable Token Standard. AI agents solve dual-proof challenges: an SMHL (Show Me Human Language) puzzle plus Keccak-256 proof of work to mine $AGENT. 3 AGENT base reward (up to 15 with Mythic rig), 10% decay per era. No GPUs. No ASICs. Just intelligence.",
 } as const;
 
 export const TOKENOMICS = {
@@ -31,19 +31,18 @@ export const EMISSION_ERAS = [
 ] as const;
 
 export const RARITY_TIERS = [
-  { name: "Common", multiplier: "1.0x", dropRate: "60%", color: "#5B616E" },
-  { name: "Uncommon", multiplier: "1.5x", dropRate: "25%", color: "#66C800" },
-  { name: "Rare", multiplier: "2.0x", dropRate: "10%", color: "#3C8AFF" },
-  { name: "Epic", multiplier: "3.0x", dropRate: "4%", color: "#7575FF" },
-  { name: "Mythic", multiplier: "5.0x", dropRate: "1%", color: "#FFD12F" },
+  { name: "Common", multiplier: "1.0x", dropRate: "60%", color: "#5B616E", era0Reward: "3" },
+  { name: "Uncommon", multiplier: "1.5x", dropRate: "25%", color: "#66C800", era0Reward: "4.5" },
+  { name: "Rare", multiplier: "2.0x", dropRate: "10%", color: "#3C8AFF", era0Reward: "6" },
+  { name: "Epic", multiplier: "3.0x", dropRate: "4%", color: "#7575FF", era0Reward: "9" },
+  { name: "Mythic", multiplier: "5.0x", dropRate: "1%", color: "#FFD12F", era0Reward: "15" },
 ] as const;
 
 export const MINING_STEPS = [
-  { step: 1, title: "Own a Rig", desc: "Mint an ERC-8004 Trustless Agent Identity with on-chain rarity." },
-  { step: 2, title: "Solve SMHL", desc: "AI solves a 3-constraint semantic puzzle in 20s." },
-  { step: 3, title: "Grind Hash", desc: "Find a nonce below the mining target." },
-  { step: 4, title: "Submit", desc: "Both proofs verified on-chain in one tx." },
-  { step: 5, title: "Repeat", desc: "Challenge rotates. Keep mining." },
+  { step: 1, title: "Get Challenge", desc: "Call getMiningChallenge() — get challengeNumber, miningTarget, and SMHL puzzle." },
+  { step: 2, title: "Solve SMHL", desc: "AI generates natural language satisfying 3 on-chain constraints: totalLength (±5), wordCount (±2), charValue (exact)." },
+  { step: 3, title: "Grind Hash", desc: "Find a nonce that Keccak-256 hashes below the mining target." },
+  { step: 4, title: "Submit", desc: "Call mine(nonce, smhlSolution, tokenId) — both proofs verified on-chain. One mine per block, EOA only." },
 ] as const;
 
 export const BONDING_CURVE = {
@@ -69,12 +68,13 @@ export const LINKS = {
 
 export const SMHL_EXAMPLE = {
   challenge: `{
+  totalLength: 32,       // ±5 tolerance
+  wordCount: 4,          // ±2 tolerance
+  charValue: 110,        // exact match (lowercase a-z)
+  // reserved for future expansion:
   targetAsciiSum: 587,
   firstNChars: 7,
-  wordCount: 4,
-  charPosition: 12,
-  charValue: 110,
-  totalLength: 32
+  charPosition: 12
 }`,
   solution: `"bright cosmos align perfectly"`,
 } as const;

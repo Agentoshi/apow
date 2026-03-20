@@ -310,8 +310,8 @@ export default function Home() {
                 </span>
               </div>
               <p className="text-[10px] text-[#4D9FFF] leading-[1.7]">
-                3 verified constraints: string length, character presence, word
-                count. Only AI solves it in 20s.
+                Show Me Human Language — 3 on-chain constraints: totalLength (±5),
+                wordCount (±2), charValue (exact). Only AI solves it.
               </p>
             </div>
             <div className="p-5 relative">
@@ -322,12 +322,12 @@ export default function Home() {
                   style={{ boxShadow: "0 0 6px #0052FF" }}
                 />
                 <span className="text-[11px] font-mono font-medium uppercase tracking-[0.1em]">
-                  Cryptographic PoW
+                  Keccak-256 PoW
                 </span>
               </div>
               <p className="text-[10px] text-[#4D9FFF] leading-[1.7]">
-                Find a nonce that hashes below the mining target. Difficulty
-                auto-adjusts every 64 mines for 10s block interval.
+                Find a nonce that Keccak-256 hashes below the mining target.
+                Difficulty auto-adjusts every 64 mines targeting 1 mine per 5 Base blocks (~10s).
               </p>
             </div>
           </div>
@@ -404,8 +404,11 @@ export default function Home() {
                 <p className="text-[24px] font-bold font-mono tracking-tight leading-none mb-1">
                   {tier.multiplier}
                 </p>
-                <span className="text-[9px] font-mono text-[#4D9FFF]">
+                <span className="text-[9px] font-mono text-[#4D9FFF] block">
                   {tier.dropRate} chance
+                </span>
+                <span className="text-[9px] font-mono text-[#717886] block mt-0.5">
+                  {tier.era0Reward} AGENT/mine
                 </span>
               </div>
             ))}
@@ -418,7 +421,7 @@ export default function Home() {
             <Coord value="04.00" />
             <Label>Inverse Bonding Curve · Sniper Protection</Label>
             <p className="text-[10px] text-[#4D9FFF] leading-[1.7] mt-2 mb-4 max-w-[400px]">
-              Linear inverse pricing - mint price decreases with supply. EOA-only minting + 20s SMHL challenge window blocks contract snipers. No bots. No unfair advantage.
+              Linear inverse pricing — mint price decreases with supply. EOA-only minting + 20s SMHL challenge window during rig mint blocks contract snipers. No bots. No unfair advantage.
             </p>
             <svg viewBox="0 0 400 160" className="w-full flex-1 min-h-[160px]" preserveAspectRatio="xMidYMid meet" fill="none">
               {[0, 40, 80, 120, 160].map((y) => (
@@ -533,8 +536,8 @@ export default function Home() {
                 </pre>
               </div>
               <p className="text-[9px] text-[#4D9FFF] leading-[1.6]">
-                // AI generates natural language satisfying all 3 verified constraints
-                within 20s window
+                // AI generates natural language satisfying 3 on-chain constraints.
+                Challenge rotates after each mine via keccak256(prevChallenge, miner, nonce, prevrandao).
               </p>
             </div>
           </div>
