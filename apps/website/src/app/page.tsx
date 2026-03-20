@@ -12,12 +12,52 @@ import {
   SMHL_EXAMPLE,
   BONDING_CURVE,
   LINKS,
+  AGENT_COIN_ADDRESS,
+  MINING_AGENT_ADDRESS,
+  SELECTORS,
+  ERA_INTERVAL,
 } from "@/lib/constants";
 
 // LP Vault — update post-deploy
 const LP_VAULT_ADDRESS = "0xDD47511d060eA4E955B95F6f43553414328648a6";
 const LP_VAULT_THRESHOLD = 5.0; // ETH
 const BASE_RPC = "https://mainnet.base.org";
+
+async function ethCall(to: string, data: string): Promise<string | null> {
+  try {
+    const res = await fetch(BASE_RPC, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_call", params: [{ to, data }, "latest"] }),
+    });
+    const json = await res.json();
+    return json.result ?? null;
+  } catch { return null; }
+}
+
+function useMiningData() {
+  const [data, setData] = useState<{ totalMines: number; mintPrice: number; rigsMinted: number } | null>(null);
+  useEffect(() => {
+    async function fetchData() {
+      const [minesHex, priceHex, nextIdHex] = await Promise.all([
+        ethCall(AGENT_COIN_ADDRESS, SELECTORS.totalMines),
+        ethCall(MINING_AGENT_ADDRESS, SELECTORS.getMintPrice),
+        ethCall(MINING_AGENT_ADDRESS, SELECTORS.nextTokenId),
+      ]);
+      if (minesHex && priceHex && nextIdHex) {
+        setData({
+          totalMines: parseInt(minesHex, 16),
+          mintPrice: parseInt(priceHex, 16) / 1e18,
+          rigsMinted: parseInt(nextIdHex, 16) - 1,
+        });
+      }
+    }
+    fetchData();
+    const interval = setInterval(fetchData, 30_000);
+    return () => clearInterval(interval);
+  }, []);
+  return data;
+}
 
 const DitheredHero = dynamic(() => import("@/components/DitheredHero"), {
   ssr: false,
@@ -221,6 +261,8 @@ export default function Home() {
   const [progress, setProgress] = useState(0);
   const [canvasReady, setCanvasReady] = useState(false);
   const [crtOn, setCrtOn] = useState(true);
+  const miningData = useMiningData();
+  const currentEra = miningData ? Math.floor(miningData.totalMines / ERA_INTERVAL) : 0;
 
   useEffect(() => {
     document.fonts.ready.then(() => setProgress((p) => Math.max(p, 0.4)));
@@ -445,42 +487,56 @@ export default function Home() {
         {/* EMISSION ROW */}
         <div className="border-b border-[rgba(255,255,255,0.04)] p-6 relative overflow-x-auto sm:overflow-x-visible">
           <Coord value="03.00" />
-          <Label>Emission Schedule · 10% decay per era</Label>
+          <div className="flex items-baseline justify-between">
+            <Label>Emission Schedule · 10% decay per era</Label>
+            <span className="text-[9px] font-mono text-[#4D9FFF]">
+              {miningData
+                ? `${miningData.totalMines.toLocaleString()} / ${ERA_INTERVAL.toLocaleString()} mines in era ${currentEra}`
+                : "Loading..."}
+            </span>
+          </div>
           <div className="flex items-start gap-1 mt-4 min-w-[520px] sm:min-w-0">
-            {EMISSION_ERAS.map((era, i) => (
-              <div key={era.era} className="flex items-start gap-1 flex-1">
-                <div className="flex-1">
-                  <div
-                    className={`h-[3px] mb-2 ${
-                      era.status === "active" ? "bg-[#0052FF]" : "bg-[#1A1B1F]"
-                    }`}
-                    style={{
-                      boxShadow:
-                        era.status === "active"
-                          ? "0 0 8px rgba(0,82,255,0.4)"
-                          : "none",
-                    }}
-                  />
-                  <div className="flex items-baseline justify-between">
-                    <span
-                      className={`text-[18px] font-bold font-mono tracking-tight ${
-                        era.status === "active"
-                          ? "text-white"
-                          : "text-[#4D9FFF]"
+            {EMISSION_ERAS.map((era, i) => {
+              const isActive = era.era === currentEra;
+              const isCompleted = era.era < currentEra;
+              return (
+                <div key={era.era} className="flex items-start gap-1 flex-1">
+                  <div className="flex-1">
+                    <div
+                      className={`h-[3px] mb-2 ${
+                        isActive ? "bg-[#0052FF]" : isCompleted ? "bg-[#66C800]" : "bg-[#1A1B1F]"
                       }`}
-                    >
-                      {era.reward}
-                    </span>
-                    <span className="text-[9px] font-mono text-[#4D9FFF]">
-                      {era.mineRange}
-                    </span>
+                      style={{
+                        boxShadow: isActive
+                          ? "0 0 8px rgba(0,82,255,0.4)"
+                          : isCompleted
+                            ? "0 0 8px rgba(102,200,0,0.3)"
+                            : "none",
+                      }}
+                    />
+                    <div className="flex items-baseline justify-between">
+                      <span
+                        className={`text-[18px] font-bold font-mono tracking-tight ${
+                          isActive
+                            ? "text-white"
+                            : isCompleted
+                              ? "text-[#66C800]"
+                              : "text-[#4D9FFF]"
+                        }`}
+                      >
+                        {era.reward}
+                      </span>
+                      <span className="text-[9px] font-mono text-[#4D9FFF]">
+                        {era.mineRange}
+                      </span>
+                    </div>
                   </div>
+                  {i < EMISSION_ERAS.length - 1 && (
+                    <div className="w-px h-6 bg-[rgba(255,255,255,0.04)] mx-1" />
+                  )}
                 </div>
-                {i < EMISSION_ERAS.length - 1 && (
-                  <div className="w-px h-6 bg-[rgba(255,255,255,0.04)] mx-1" />
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -529,38 +585,51 @@ export default function Home() {
             <p className="text-[10px] text-[#4D9FFF] leading-[1.7] mt-2 mb-4 max-w-[400px]">
               Linear inverse pricing — mint price decreases with supply. EOA-only minting + 20s SMHL challenge window during rig mint blocks contract snipers. No bots. No unfair advantage.
             </p>
-            <svg viewBox="0 0 400 160" className="w-full flex-1 min-h-[160px]" preserveAspectRatio="xMidYMid meet" fill="none">
-              {[0, 40, 80, 120, 160].map((y) => (
-                <line key={y} x1="40" y1={y} x2="390" y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
-              ))}
-              {[40, 127, 215, 302, 390].map((x) => (
-                <line key={x} x1={x} y1="0" x2={x} y2="160" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
-              ))}
-              <path
-                d="M 40 12 L 372 148 L 390 148"
-                stroke="#0052FF"
-                strokeWidth="1.5"
-                fill="none"
-                style={{ filter: "drop-shadow(0 0 6px rgba(0,82,255,0.4))" }}
-              />
-              <path
-                d="M 40 12 L 372 148 L 390 148 L 390 160 L 40 160 Z"
-                fill="url(#curveGrad)"
-                opacity="0.15"
-              />
-              <line x1="40" y1="148" x2="390" y2="148" stroke="#0052FF" strokeWidth="0.5" opacity="0.2" strokeDasharray="3 3" />
-              <defs>
-                <linearGradient id="curveGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0052FF" />
-                  <stop offset="100%" stopColor="#0052FF" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <text x="40" y="155" fill="#32353D" fontSize="7" fontFamily="monospace">0</text>
-              <text x="370" y="155" fill="#32353D" fontSize="7" fontFamily="monospace">10K</text>
-              <text x="6" y="16" fill="#32353D" fontSize="7" fontFamily="monospace">{BONDING_CURVE.maxPrice}</text>
-              <text x="2" y="148" fill="#32353D" fontSize="7" fontFamily="monospace">{BONDING_CURVE.minPrice}</text>
-              <circle cx="52" cy="12" r="3" fill="#0052FF" style={{ filter: "drop-shadow(0 0 4px #0052FF)" }} />
-            </svg>
+            {(() => {
+              const dotX = miningData ? 40 + (miningData.rigsMinted / 10000) * 350 : 52;
+              const dotY = miningData ? 148 - ((miningData.mintPrice - 0.0002) / 0.0018) * 136 : 12;
+              return (
+                <svg viewBox="0 0 400 160" className="w-full flex-1 min-h-[160px]" preserveAspectRatio="xMidYMid meet" fill="none">
+                  {[0, 40, 80, 120, 160].map((y) => (
+                    <line key={y} x1="40" y1={y} x2="390" y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
+                  ))}
+                  {[40, 127, 215, 302, 390].map((x) => (
+                    <line key={x} x1={x} y1="0" x2={x} y2="160" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
+                  ))}
+                  <path
+                    d="M 40 12 L 372 148 L 390 148"
+                    stroke="#0052FF"
+                    strokeWidth="1.5"
+                    fill="none"
+                    style={{ filter: "drop-shadow(0 0 6px rgba(0,82,255,0.4))" }}
+                  />
+                  <path
+                    d="M 40 12 L 372 148 L 390 148 L 390 160 L 40 160 Z"
+                    fill="url(#curveGrad)"
+                    opacity="0.15"
+                  />
+                  <line x1="40" y1="148" x2="390" y2="148" stroke="#0052FF" strokeWidth="0.5" opacity="0.2" strokeDasharray="3 3" />
+                  <defs>
+                    <linearGradient id="curveGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#0052FF" />
+                      <stop offset="100%" stopColor="#0052FF" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <text x="40" y="155" fill="#32353D" fontSize="7" fontFamily="monospace">0</text>
+                  <text x="370" y="155" fill="#32353D" fontSize="7" fontFamily="monospace">10K</text>
+                  <text x="6" y="16" fill="#32353D" fontSize="7" fontFamily="monospace">{BONDING_CURVE.maxPrice}</text>
+                  <text x="2" y="148" fill="#32353D" fontSize="7" fontFamily="monospace">{BONDING_CURVE.minPrice}</text>
+                  {/* Vertical crosshair at current supply */}
+                  <line x1={dotX} y1="0" x2={dotX} y2="160" stroke="#0052FF" strokeWidth="0.5" opacity="0.3" strokeDasharray="2 2" />
+                  <circle cx={dotX} cy={dotY} r="3" fill="#0052FF" style={{ filter: "drop-shadow(0 0 4px #0052FF)" }} />
+                </svg>
+              );
+            })()}
+            {miningData && (
+              <p className="text-[9px] font-mono text-[#4D9FFF] mt-2">
+                Current: {miningData.mintPrice.toFixed(4)} ETH · {miningData.rigsMinted.toLocaleString()} minted
+              </p>
+            )}
           </div>
 
           <div className="sm:col-span-5 grid grid-cols-3 sm:grid-cols-1 sm:grid-rows-3">

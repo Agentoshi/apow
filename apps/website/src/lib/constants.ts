@@ -78,3 +78,12 @@ export const SMHL_EXAMPLE = {
 }`,
   solution: `"bright cosmos align perfectly"`,
 } as const;
+
+export const AGENT_COIN_ADDRESS = "0x12577CF0D8a07363224D6909c54C056A183e13b3";
+export const MINING_AGENT_ADDRESS = "0xB7caD3ca5F2BD8aEC2Eb67d6E8D448099B3bC03D";
+export const SELECTORS = {
+  totalMines: "0x13ef395c",
+  getMintPrice: "0xa7f93ebd",
+  nextTokenId: "0x75794a3c",
+} as const;
+export const ERA_INTERVAL = 500_000;
