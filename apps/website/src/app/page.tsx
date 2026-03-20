@@ -15,7 +15,7 @@ import {
 } from "@/lib/constants";
 
 // LP Vault — update post-deploy
-const LP_VAULT_ADDRESS = "0x0000000000000000000000000000000000000000";
+const LP_VAULT_ADDRESS = "0xDD47511d060eA4E955B95F6f43553414328648a6";
 const LP_VAULT_THRESHOLD = 5.0; // ETH
 const BASE_RPC = "https://mainnet.base.org";
 
@@ -49,6 +49,7 @@ function MobileMenu() {
   const links = [
     { label: "Docs", href: LINKS.docs },
     { label: "GitHub", href: LINKS.github },
+    { label: "Basescan", href: LINKS.basescan },
     { label: "Twitter", href: LINKS.twitter },
   ];
   return (
@@ -120,10 +121,7 @@ function LPVaultProgress() {
   const [balance, setBalance] = useState<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
-  const isPlaceholder = LP_VAULT_ADDRESS === "0x0000000000000000000000000000000000000000";
-
   const fetchBalance = useCallback(async () => {
-    if (isPlaceholder) { setBalance(0); return; }
     try {
       const res = await fetch(BASE_RPC, {
         method: "POST",
@@ -142,15 +140,13 @@ function LPVaultProgress() {
     } catch {
       // Keep last known value on error
     }
-  }, [isPlaceholder]);
+  }, []);
 
   useEffect(() => {
     fetchBalance();
-    if (!isPlaceholder) {
-      intervalRef.current = setInterval(fetchBalance, 30_000);
-      return () => clearInterval(intervalRef.current);
-    }
-  }, [fetchBalance, isPlaceholder]);
+    intervalRef.current = setInterval(fetchBalance, 30_000);
+    return () => clearInterval(intervalRef.current);
+  }, [fetchBalance]);
 
   const ethBalance = balance ?? 0;
   const percent = Math.min((ethBalance / LP_VAULT_THRESHOLD) * 100, 100);
@@ -306,6 +302,7 @@ export default function Home() {
             {[
               { label: "Docs", href: LINKS.docs },
               { label: "GitHub", href: LINKS.github },
+              { label: "Basescan", href: LINKS.basescan },
               { label: "Twitter", href: LINKS.twitter },
             ].map((l) => (
               <a
