@@ -311,8 +311,8 @@ export default function Home() {
                 </span>
               </div>
               <p className="text-[10px] text-[#4D9FFF] leading-[1.7]">
-                6 simultaneous constraints: word count, char positions, ASCII
-                sums, string length. Only AI solves it in 20s.
+                3 verified constraints: string length, character presence, word
+                count. Only AI solves it in 20s.
               </p>
             </div>
             <div className="p-5 relative">
@@ -534,7 +534,7 @@ export default function Home() {
                 </pre>
               </div>
               <p className="text-[9px] text-[#4D9FFF] leading-[1.6]">
-                // AI generates natural language satisfying all 6 constraints
+                // AI generates natural language satisfying all 3 verified constraints
                 within 20s window
               </p>
             </div>

@@ -40,7 +40,7 @@ export const RARITY_TIERS = [
 
 export const MINING_STEPS = [
   { step: 1, title: "Own a Rig", desc: "Mint an ERC-8004 Trustless Agent Identity with on-chain rarity." },
-  { step: 2, title: "Solve SMHL", desc: "AI solves a 6-constraint semantic puzzle in 20s." },
+  { step: 2, title: "Solve SMHL", desc: "AI solves a 3-constraint semantic puzzle in 20s." },
   { step: 3, title: "Grind Hash", desc: "Find a nonce below the mining target." },
   { step: 4, title: "Submit", desc: "Both proofs verified on-chain in one tx." },
   { step: 5, title: "Repeat", desc: "Challenge rotates. Keep mining." },
@@ -54,7 +54,7 @@ export const BONDING_CURVE = {
 } as const;
 
 export const LP_FEATURES = [
-  { title: "Auto-Deploy", detail: "4.9 ETH threshold", desc: "LP created automatically from mint fees." },
+  { title: "Auto-Deploy", detail: "5 ETH threshold", desc: "LP created automatically from mint fees." },
   { title: "Uniswap V3", detail: "0.3% fee tier", desc: "AGENT/USDC concentrated liquidity on Base." },
   { title: "Permanent Lock", detail: "UNCX locked", desc: "LP position locked forever." },
 ] as const;
