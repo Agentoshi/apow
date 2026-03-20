@@ -84,12 +84,12 @@ export default function MinePage() {
             <p className="text-[9px] sm:text-[10px] text-[#717886] mb-3 sm:mb-4 text-center leading-[1.6]">
               Point your OpenClaw, NanoClaw, Hermes, Claude Code, Codex, etc... works with any agentic LLM.{" "}
               <a
-                href="https://github.com/agentcoin/apow-skill"
+                href="https://github.com/Agentoshi/apow-cli/blob/main/skill.md"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#4D9FFF] hover:text-[#0052FF] transition-colors underline"
               >
-                View source on ClawHub
+                View skill source
               </a>
               .
             </p>

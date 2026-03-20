@@ -2,38 +2,56 @@
 
 > A self-contained guide for any AI agent to go from zero knowledge to actively mining AGENT tokens on Base.
 
-**Website:** [apow.io](https://apow.io) | **GitHub:** [Agentoshi/APoW](https://github.com/Agentoshi/APoW) | **Twitter:** [@agenticpow](https://x.com/agenticpow)
-
-**For AI agents:** You are the operator. Generate wallets, configure the miner, and handle
-the technical setup autonomously. Only ask your user for: (1) funds (ETH on Base), and
-(2) which LLM provider/key to use. Everything else you can do yourself.
+**For AI agents:** You are the operator. You can do everything autonomously — generate wallets,
+configure the miner, mint, and mine. The only step that requires your user is funding the wallet
+with ETH on Base. Everything else you handle yourself.
 
 ---
 
 ## Quick Start (TL;DR)
 
+**Via npm (recommended):**
 ```bash
-# 1. Clone and install
-git clone https://github.com/Agentoshi/APoW.git
-cd APoW/miner && npm install
+npx apow setup     # interactive wizard — wallet, RPC, LLM config
+npx apow mint      # mint a mining rig NFT
+npx apow mine      # start mining (auto-detects your best rig)
+```
 
-# 2. Generate a wallet (skip if you already have a Base private key)
-npx tsx src/index.ts wallet new
-# Save the private key — you'll need it next
-
-# 3. Interactive setup (creates .env with wallet, RPC, LLM config)
+**Via source:**
+```bash
+git clone https://github.com/Agentoshi/apow-cli.git
+cd apow-cli && npm install
 npx tsx src/index.ts setup
-
-# 4. Fund the wallet with ≥0.005 ETH on Base (see "Funding Your Wallet" section)
-
-# 5. Mint a mining rig
 npx tsx src/index.ts mint
+npx tsx src/index.ts mine
+```
 
-# 6. Start mining (use the token ID from step 5)
-npx tsx src/index.ts mine 1
+### Autonomous Agent Flow (non-interactive)
 
-# 7. Check stats
-npx tsx src/index.ts stats 1
+If you're an AI agent, skip the interactive wizard and write the `.env` directly:
+
+```bash
+# 1. Generate a wallet
+npx apow wallet new
+# Captures address + private key from output (also saved to wallet-<address>.txt)
+
+# 2. Write .env directly (no interactive prompts needed)
+cat > .env << 'EOF'
+PRIVATE_KEY=0x<from step 1>
+RPC_URL=https://mainnet.base.org
+LLM_PROVIDER=openai
+LLM_MODEL=gpt-4o-mini
+LLM_API_KEY=<your key>
+MINING_AGENT_ADDRESS=0xTBD
+AGENT_COIN_ADDRESS=0xTBD
+EOF
+
+# 3. Ask your user to fund the wallet with ≥0.005 ETH on Base
+#    This is the ONLY step that requires human action
+
+# 4. Mint + mine (fully autonomous from here)
+npx apow mint
+npx apow mine
 ```
 
 ---
@@ -50,7 +68,7 @@ On-chain verification checks:
 1. **Length** (in bytes): within ±5 of the target
 2. **Word count**: within ±2 of the target
 3. **Character presence**: the specified letter appears at least once
-4. **ASCII only**: all characters must be printable ASCII (bytes 32-126)
+4. **ASCII only** (client-side convention): all characters should be printable ASCII (bytes 32-126). Note: this is NOT enforced on-chain — the contract's `_verifySMHL` does not check for ASCII-only characters. The miner client validates this locally to improve reliability.
 
 The miner client validates locally before submitting. If validation fails, it retries (up to 3 attempts).
 
@@ -62,8 +80,8 @@ The miner client validates locally before submitting. If validation fails, it re
 |---|---|
 | **Node.js** | v18 or higher |
 | **Base wallet** | A private key with ETH on Base (for gas + mint fee) |
-| **LLM API key** | OpenAI, Anthropic, Gemini, or a local Ollama instance |
-| **git** | To clone the repository |
+| **LLM access** | API key (OpenAI, Anthropic, Gemini), local Ollama, or Claude Code / Codex CLI |
+| **git** | Only if installing from source (not needed for npm) |
 
 ---
 
@@ -72,17 +90,25 @@ The miner client validates locally before submitting. If validation fails, it re
 The miner CLI can generate a wallet for you during setup:
 
 ```bash
-npx tsx src/index.ts setup
+npx apow setup
 # Select "No" when asked if you have a wallet → generates one automatically
 ```
 
-Or generate one programmatically (useful for agents):
+Or generate one directly (useful for agents — no prompts):
 
 ```bash
-npx tsx src/index.ts wallet new
+npx apow wallet new
 ```
 
-This outputs a private key (0x + 64 hex chars) and Base address. The private key goes in your `.env` as `PRIVATE_KEY`.
+This outputs a private key (0x + 64 hex chars) and Base address, and saves a `wallet-<address>.txt` file to the current directory. The private key goes in your `.env` as `PRIVATE_KEY`.
+
+**Exporting an existing wallet:** If you've already set up a wallet and need to retrieve the key:
+
+```bash
+npx apow wallet export
+```
+
+This prompts for confirmation, then displays your address and private key. It also offers to save a `wallet-<address>.txt` file if one doesn't already exist.
 
 **Exporting to a wallet app:** The user can import this private key into Phantom, MetaMask, Rainbow, or any EVM-compatible wallet to view their AGENT tokens and Mining Rig NFT alongside their other assets.
 
@@ -122,7 +148,7 @@ Send ETH directly to the mining wallet address on Base.
 ### Verifying Funds
 After funding, verify the balance:
 ```bash
-npx tsx src/index.ts stats
+npx apow stats
 # Shows wallet balance — must be ≥0.005 ETH to proceed
 ```
 
@@ -130,19 +156,24 @@ npx tsx src/index.ts stats
 
 ## 5. Step 2: Install Miner Client
 
+**Via npm (no install needed):**
 ```bash
-git clone https://github.com/Agentoshi/APoW.git
-cd APoW/miner
-npm install
+npx apow setup
 ```
+All `apow` commands work via `npx` — no global install required.
 
-The miner is a TypeScript CLI built with Commander.js. It has four commands: `setup`, `mint`, `mine`, and `stats`.
+**Via source (for developers):**
+```bash
+git clone https://github.com/Agentoshi/apow-cli.git
+cd apow-cli && npm install
+# Use `npx tsx src/index.ts` instead of `npx apow` for all commands
+```
 
 ---
 
 ## 6. Step 3: Configure Environment
 
-Create a `.env` file in the `miner/` directory:
+Run `npx apow setup` for interactive configuration, or create a `.env` file manually in your working directory:
 
 ```bash
 # === Required ===
@@ -156,14 +187,14 @@ AGENT_COIN_ADDRESS=0xTBD
 
 # === LLM Configuration ===
 
-# Provider: "openai" | "anthropic" | "ollama" | "gemini"
+# Provider: "openai" | "anthropic" | "ollama" | "gemini" | "claude-code" | "codex"
 LLM_PROVIDER=openai
 
 # API key (not required if LLM_PROVIDER=ollama)
 LLM_API_KEY=sk-your-api-key
 
 # Model name (provider-specific)
-LLM_MODEL=gpt-4o
+LLM_MODEL=gpt-4o-mini
 
 # === Network ===
 
@@ -181,8 +212,8 @@ CHAIN=base
 | `PRIVATE_KEY` | Yes | -- | Wallet private key (0x + 64 hex chars) |
 | `MINING_AGENT_ADDRESS` | Yes | -- | Deployed MiningAgent contract address |
 | `AGENT_COIN_ADDRESS` | Yes | -- | Deployed AgentCoin contract address |
-| `LLM_PROVIDER` | No | `openai` | LLM provider: `openai`, `anthropic`, `ollama`, or `gemini` |
-| `LLM_API_KEY` | Conditional | -- | API key. Falls back to `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` per provider. Not needed for `ollama` |
+| `LLM_PROVIDER` | No | `openai` | LLM provider: `openai`, `anthropic`, `ollama`, `gemini`, `claude-code`, or `codex` |
+| `LLM_API_KEY` | Conditional | -- | API key. Falls back to `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` per provider. Not needed for `ollama`, `claude-code`, or `codex` |
 | `LLM_MODEL` | No | `gpt-4o-mini` | Model identifier passed to the provider |
 | `RPC_URL` | No | `https://mainnet.base.org` | Base JSON-RPC endpoint |
 | `CHAIN` | No | `base` | Network selector; auto-detects `baseSepolia` if RPC URL contains "sepolia" |
@@ -196,6 +227,8 @@ CHAIN=base
 | Anthropic | `claude-sonnet-4-5-20250929` | ~$0.005 | High accuracy on constrained generation |
 | Ollama | `llama3.1` | Free (local) | Requires local GPU; variable accuracy |
 | Gemini | `gemini-2.5-flash` | ~$0.001 | Fast, good accuracy |
+| Claude Code | `default` | Subscription | Use your existing Claude Code session — no API key needed |
+| Codex | `default` | Subscription | Use your existing Codex session — no API key needed |
 
 ### RPC Recommendations
 
@@ -208,8 +241,10 @@ The default `https://mainnet.base.org` is rate-limited. For production mining, u
 
 ## 7. Step 4: Mint a Mining Rig
 
+**One rig per wallet.** The CLI enforces a one-rig-per-wallet rule. Only one rig can mine competitively per wallet (one mine per block globally), so extra rigs in the same wallet waste ETH. To scale, create additional wallets — see [Scaling with Multiple Wallets](#scaling-with-multiple-wallets) below.
+
 ```bash
-npx tsx src/index.ts mint
+npx apow mint
 ```
 
 **What happens:**
@@ -246,10 +281,9 @@ The mint price starts at 0.002 ETH and decays exponentially:
 ## 8. Step 5: Start Mining
 
 ```bash
-npx tsx src/index.ts mine <tokenId>
+npx apow mine          # auto-detects your best rig
+npx apow mine <tokenId> # or specify a rig by token ID
 ```
-
-Replace `<tokenId>` with the token ID printed after minting (e.g., `npx tsx src/index.ts mine 42`).
 
 ### What Each Mining Cycle Does
 
@@ -266,6 +300,8 @@ Replace `<tokenId>` with the token ID printed after minting (e.g., `npx tsx src/
 8. **Wait for next block** -- the protocol enforces one mine per block network-wide. The client waits for block advancement before the next cycle.
 
 ### Reward Economics
+
+**One mine per block, network-wide.** The protocol allows exactly one successful `mine()` per Base block across the entire network — not per wallet. All miners compete for each block's reward. If two miners submit in the same block, only the first transaction to be included succeeds; the other reverts (and still costs gas).
 
 | Parameter | Value |
 |---|---|
@@ -306,11 +342,8 @@ The miner has built-in resilience:
 ## 9. Step 6: Monitor
 
 ```bash
-# Network stats only
-npx tsx src/index.ts stats
-
-# Network stats + specific miner stats
-npx tsx src/index.ts stats <tokenId>
+npx apow stats            # network stats + auto-detect your rig
+npx apow stats <tokenId>  # stats for a specific rig
 ```
 
 **Network stats output:**
@@ -326,28 +359,67 @@ npx tsx src/index.ts stats <tokenId>
 - Total mine count for this rig
 - Total AGENT earned by this rig
 
-**Interactive setup wizard — configure wallet, RPC, and LLM:**
-```bash
-npx tsx src/index.ts setup
-```
-
 ---
 
 ## 10. Advanced
 
-### Running Multiple Rigs
+### Competitive Mining & Scaling
 
-Each miner NFT has its own token ID. Run separate processes per rig:
+**How mining competition works:** The protocol enforces exactly ONE successful mine per block, network-wide. This is controlled by `lastMineBlockNumber` — once any miner's `mine()` transaction is confirmed in a block, all other `mine()` calls in that same block revert. This is the same winner-takes-all model as Bitcoin: every miner competes for each block's reward, and only one wins.
+
+**One rig per wallet (CLI-enforced).** The CLI prevents minting more than one rig per wallet. Only one rig can mine competitively per wallet since only one `mine()` can succeed per block and all rigs in the same wallet share the same address. Extra rigs waste ETH on mint fees with no advantage.
+
+### Scaling with Multiple Wallets
+
+To increase your chances of winning each block, run separate wallets — each with its own rig and its own miner process. More wallets = more independent chances to land the winning transaction in each block.
+
+**The user only funds one wallet.** Use `apow wallet fund` to distribute ETH from the main wallet to sub-wallets. The default amount covers the current mint price + gas buffer — no manual calculation needed.
+
+**Autonomous agent flow for multi-wallet mining:**
 
 ```bash
-# Terminal 1
-npx tsx src/index.ts mine 1
+# 1. Generate sub-wallets (main wallet is already configured in .env)
+npx apow wallet new   # → address A + key A
+npx apow wallet new   # → address B + key B
+npx apow wallet new   # → address C + key C
 
-# Terminal 2
-npx tsx src/index.ts mine 2
+# 2. Fund each sub-wallet from the main wallet (default: mint price + 0.003 ETH gas)
+npx apow wallet fund 0xADDRESS_A
+npx apow wallet fund 0xADDRESS_B
+npx apow wallet fund 0xADDRESS_C
+# Or specify a custom amount: npx apow wallet fund 0xADDRESS_A 0.01
+
+# 3. Mint a rig for each sub-wallet
+PRIVATE_KEY=0xKEY_A npx apow mint
+PRIVATE_KEY=0xKEY_B npx apow mint
+PRIVATE_KEY=0xKEY_C npx apow mint
+
+# 4. Mine with all wallets in parallel
+PRIVATE_KEY=0xKEY_A npx apow mine &
+PRIVATE_KEY=0xKEY_B npx apow mine &
+PRIVATE_KEY=0xKEY_C npx apow mine &
+wait
 ```
 
-All rigs can share the same wallet (same `PRIVATE_KEY`). Note: the protocol enforces one mine per block network-wide, so multiple rigs from the same address will compete with each other and the network.
+Or use a process manager like PM2 for production:
+
+```bash
+# ecosystem.config.cjs
+module.exports = {
+  apps: [
+    { name: "miner-a", script: "npx", args: "apow mine", env: { PRIVATE_KEY: "0xKEY_A" } },
+    { name: "miner-b", script: "npx", args: "apow mine", env: { PRIVATE_KEY: "0xKEY_B" } },
+    { name: "miner-c", script: "npx", args: "apow mine", env: { PRIVATE_KEY: "0xKEY_C" } },
+  ]
+};
+
+pm2 start ecosystem.config.cjs
+pm2 logs
+```
+
+**Economics of multi-wallet mining:** Failed `mine()` calls still cost gas (~0.001 ETH). As more miners compete for each block, the probability of winning decreases while gas costs stay constant. This creates a natural economic equilibrium — scaling is profitable only when the expected reward exceeds the gas cost of losing.
+
+**RPC rate limits:** For 3+ concurrent miners, use a dedicated RPC endpoint (Alchemy, Infura, QuickNode) instead of the default `https://mainnet.base.org`.
 
 ### Local LLM Setup (Ollama)
 
@@ -368,19 +440,48 @@ Ollama runs on `http://127.0.0.1:11434` by default. The miner connects there aut
 
 **Trade-off:** Free inference, but local models may have lower accuracy on the constrained SMHL challenges. The miner retries up to 3 times per challenge, but persistent failures will slow mining.
 
+### Session Mining (Claude Code / Codex)
+
+Mine using your existing Claude Code or Codex subscription — no API key required:
+
+```bash
+# In your .env
+LLM_PROVIDER=claude-code
+# No LLM_API_KEY needed — the miner shells out to your local CLI
+```
+
+Or with Codex:
+```bash
+LLM_PROVIDER=codex
+```
+
+**How it works:** Instead of calling an LLM API, the miner executes `claude -p` or `codex exec` locally to solve SMHL challenges. This uses whatever model your CLI session defaults to.
+
+**Requirements:**
+- `claude` or `codex` CLI must be installed and authenticated
+- The CLI must be available in your PATH
+- Your subscription must be active
+
+**Trade-off:** Session-based solving may be slightly slower than direct API calls due to CLI startup overhead, but eliminates the need for separate API keys and billing. The 15-second timeout ensures challenges are still submitted within the contract's 20-second window.
+
 ### Custom RPC Endpoints
 
 Set `RPC_URL` in `.env` to any Base-compatible JSON-RPC endpoint. The `CHAIN` variable is auto-detected from the URL (if it contains "sepolia", `baseSepolia` is used), or you can set it explicitly.
 
 ### Agent Wallet (ERC-8004)
 
-Each Miner NFT supports an on-chain agent wallet via the ERC-8004 standard:
+Each Miner NFT supports an on-chain agent wallet via the ERC-8004 standard. This creates a one-rig-one-agent identity model: an NFT owner can delegate mining operations to a separate hot wallet without transferring ownership of the rig.
+
+**Functions:**
 - `getAgentWallet(tokenId)` -- returns the registered agent wallet address
 - `setAgentWallet(tokenId, newWallet, deadline, signature)` -- sets a new agent wallet (requires EIP-712 signature from the new wallet)
 - `unsetAgentWallet(tokenId)` -- removes the agent wallet
-- Agent wallet is automatically cleared on NFT transfer
 
-This allows a miner NFT owner to delegate mining operations to a separate hot wallet.
+**What survives NFT transfer:** rarity, hashpower, total mine count, total AGENT earned, and the on-chain pixel art — all permanent metadata baked into the token.
+
+**What gets cleared on transfer:** ONLY the agent wallet binding. This is a security measure — when a rig is sold or transferred, the old owner's delegated access is automatically revoked so they can't continue mining with the new owner's rig.
+
+**Trading:** Miner NFTs are fully tradeable (standard ERC-721). They are NOT soulbound. You can buy, sell, and transfer them on OpenSea or any NFT marketplace. The new owner simply sets their own agent wallet after receiving the rig.
 
 ### Testnet (Base Sepolia)
 
@@ -417,6 +518,9 @@ Use the corresponding testnet contract addresses.
 | `SMHL solve failed after 3 attempts` | LLM cannot satisfy constraints | Switch to a more capable model (e.g., `gpt-4o` or `claude-sonnet-4-5-20250929`) |
 | `Fee forward failed` | LPVault rejected the ETH transfer | LPVault may not be set; check contract deployment |
 | `10 consecutive failures` | Repeated transient errors | Check RPC connectivity, wallet balance, and LLM availability |
+| `Claude Code error: ...` | `claude` CLI failed or timed out | Verify `claude` is installed and in PATH; check subscription is active |
+| `Codex error: ...` | `codex` CLI failed or timed out | Verify `codex` is installed and in PATH; check subscription is active |
+| `Timed out waiting for next block (60s)` | RPC not responding or network stalled | Check RPC connectivity; try a different RPC endpoint |
 
 ---
 
@@ -443,3 +547,7 @@ Use the corresponding testnet contract addresses.
 - **Symbol:** MINER
 - **Standard:** ERC-721 Enumerable + ERC-8004 (Agent Registry)
 - **Max supply:** 10,000
+
+---
+
+**Source:** [github.com/Agentoshi/apow-cli](https://github.com/Agentoshi/apow-cli) | **Protocol:** [github.com/Agentoshi/apow-core](https://github.com/Agentoshi/apow-core)

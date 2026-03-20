@@ -709,7 +709,7 @@ export default function Home() {
             </p>
             <div className="flex gap-2 mb-6">
               <a
-                href={LINKS.mint}
+                href="/mine"
                 className="h-9 px-5 text-[11px] font-mono uppercase tracking-[0.08em] bg-[#0052FF] hover:bg-[#0047E0] text-white flex items-center transition-colors shadow-[0_0_24px_rgba(0,82,255,0.25)]"
               >
                 START MINING
