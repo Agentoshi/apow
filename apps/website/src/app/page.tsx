@@ -17,7 +17,7 @@ import {
 // LP Vault — update post-deploy
 const LP_VAULT_ADDRESS = "0x0000000000000000000000000000000000000000";
 const LP_VAULT_THRESHOLD = 5.0; // ETH
-const BASE_RPC = "https://base-mainnet.g.alchemy.com/v2/nUh5tBofaz9MtKP-oeJ5g";
+const BASE_RPC = "https://mainnet.base.org";
 
 const DitheredHero = dynamic(() => import("@/components/DitheredHero"), {
   ssr: false,
@@ -726,7 +726,6 @@ export default function Home() {
                 { label: "Docs", href: LINKS.docs },
                 { label: "GitHub", href: LINKS.github },
                 { label: "Twitter", href: LINKS.twitter },
-                { label: "Basescan", href: LINKS.basescan },
               ].map((l) => (
                 <a
                   key={l.label}

@@ -63,8 +63,6 @@ export const LINKS = {
   docs: "https://docs.apow.io",
   github: "https://github.com/Agentoshi/apow-cli",
   twitter: "https://x.com/agenticpow",
-  basescan: "#",
-  mint: "#",
 } as const;
 
 export const SMHL_EXAMPLE = {
