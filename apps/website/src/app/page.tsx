@@ -404,11 +404,8 @@ export default function Home() {
                 <p className="text-[24px] font-bold font-mono tracking-tight leading-none mb-1">
                   {tier.multiplier}
                 </p>
-                <span className="text-[9px] font-mono text-[#4D9FFF] block">
+                <span className="text-[9px] font-mono text-[#4D9FFF]">
                   {tier.dropRate} chance
-                </span>
-                <span className="text-[9px] font-mono text-[#717886] block mt-0.5">
-                  {tier.era0Reward} AGENT/mine
                 </span>
               </div>
             ))}
