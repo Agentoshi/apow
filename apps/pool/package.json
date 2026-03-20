@@ -1,0 +1,26 @@
+{
+  "name": "apow-pool",
+  "version": "0.1.0",
+  "description": "APoW mining pool agent — mining-as-a-service via ACP on Base",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@virtuals-protocol/acp-node": "^0.3.0-beta.39",
+    "dotenv": "^17.2.3",
+    "openai": "^6.6.0",
+    "viem": "^2.38.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.17.0"
+  }
+}
