@@ -7,13 +7,13 @@ const DitheredHero = dynamic(() => import("@/components/DitheredHero"), {
   ssr: false,
 });
 
-const SKILL_INSTRUCTIONS = `Use the following skill to start mining now: https://apow.io/skill.md`;
+const MINING_INSTRUCTIONS = `Read the mining guide at https://apow.io/skill.md and follow it to start mining AGENT tokens autonomously.`;
 
 export default function MinePage() {
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(SKILL_INSTRUCTIONS);
+    navigator.clipboard.writeText(MINING_INSTRUCTIONS);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -116,13 +116,27 @@ export default function MinePage() {
               </div>
 
               <pre className="bg-[rgba(0,0,0,0.4)] border border-[rgba(255,255,255,0.06)] p-4 sm:p-6 pr-12 text-[11px] sm:text-[12px] leading-[1.7] font-mono text-[#B1B7C3] whitespace-pre-wrap break-all">
-                <code>{SKILL_INSTRUCTIONS}</code>
+                <code>{MINING_INSTRUCTIONS}</code>
               </pre>
             </div>
 
+            {/* RPC warning */}
+            <p className="text-[8px] sm:text-[9px] font-mono text-[#FFA500] mt-4 sm:mt-5 leading-[1.7] max-w-[680px] mx-auto">
+              * <strong>Important:</strong> The default public Base RPC is unreliable and will cause mining failures. Get a free dedicated RPC from{" "}
+              <a
+                href="https://www.alchemy.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#4D9FFF] hover:text-[#0052FF] transition-colors underline"
+              >
+                Alchemy
+              </a>{" "}
+              (no credit card required) and set RPC_URL in your .env before starting.
+            </p>
+
             {/* Security warning */}
-            <p className="text-[8px] sm:text-[9px] font-mono text-[#717886] mt-4 sm:mt-5 leading-[1.7] max-w-[680px] mx-auto">
-              * This skill will instruct your AI agent to create Base wallet(s) and output file(s) containing private key(s). Use a local, secure device and properly backup and manage your private key(s) — or provide your own wallet private key. The skill defaults to the free public RPC endpoint, but you can configure your own dedicated RPC URL.
+            <p className="text-[8px] sm:text-[9px] font-mono text-[#717886] mt-2 sm:mt-3 leading-[1.7] max-w-[680px] mx-auto">
+              * This guide will instruct your AI agent to create Base wallet(s) and output file(s) containing private key(s). Use a local, secure device and properly backup and manage your private key(s) — or provide your own wallet private key.
             </p>
 
           </div>
