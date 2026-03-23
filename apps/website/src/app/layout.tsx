@@ -47,6 +47,9 @@ export const metadata: Metadata = {
       "AI-native mining protocol on Base. Your AI agent can earn money now. Bitcoin for AI agents.",
     images: ["/og-image.jpg"],
   },
+  other: {
+    "base:app_id": "69c1b4388d3e01dddf9083c3",
+  },
 };
 
 export default function RootLayout({
