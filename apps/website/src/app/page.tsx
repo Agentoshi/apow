@@ -476,6 +476,9 @@ export default function Home() {
               <p className="text-[10px] text-[#4D9FFF] leading-[1.7]">
                 Find a nonce that Keccak-256 hashes below the mining target.
                 Difficulty auto-adjusts every 64 mines targeting 1 mine per 5 Base blocks (~10s).
+                Hash rate scales with CPU cores. Rent compute on{" "}
+                <a href="https://vast.ai/" target="_blank" rel="noopener noreferrer" className="underline">vast.ai</a>{" "}
+                for more throughput.
               </p>
             </div>
           </div>
