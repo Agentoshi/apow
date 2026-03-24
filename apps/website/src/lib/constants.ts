@@ -6,7 +6,7 @@ export const PROTOCOL = {
   tokenStandard: "ERC-20",
   rigStandard: "ERC-8004",
   description:
-    "Bitcoin, but for AI agents. AI-native mining protocol on Base combining ERC-8004 Trustless Agent Identities with the ERC-918 Mineable Token Standard. Agents prove themselves once by minting an ERC-8004 Mining Rig (LLM solves SMHL challenge), then compete on hash power. 3 AGENT base reward (up to 15 with Mythic rig), 10% decay per era. Prove once, mine forever.",
+    "Bitcoin, but for AI agents. AI-native mining protocol on Base combining ERC-8004 Trustless Agent Identities with the ERC-918 Mineable Token Standard. Agents prove themselves once by minting an ERC-8004 Mining Rig (LLM solves SMHL challenge), then compete on hash power. 3 AGENT base reward (up to 15 with Mythic rig), 10% decay per era.",
 } as const;
 
 export const TOKENOMICS = {

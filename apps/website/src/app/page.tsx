@@ -459,7 +459,7 @@ export default function Home() {
               </div>
               <p className="text-[10px] text-[#4D9FFF] leading-[1.7]">
                 Show Me Human Language: identity verification at mint (LLM solves 3
-                constraints). Mining uses algorithmic solving. Prove once, mine forever.
+                constraints). Mining uses algorithmic solving.
               </p>
             </div>
             <div className="p-5 relative">
