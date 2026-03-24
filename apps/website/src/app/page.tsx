@@ -18,7 +18,7 @@ import {
   ERA_INTERVAL,
 } from "@/lib/constants";
 
-// LP Vault — update post-deploy
+// LP Vault (update post-deploy)
 const LP_VAULT_ADDRESS = "0xDD47511d060eA4E955B95F6f43553414328648a6";
 const LP_VAULT_THRESHOLD = 5.0; // ETH
 const BASE_RPC = "https://mainnet.base.org";
@@ -215,7 +215,7 @@ function LPVaultProgress() {
         Mint fees accumulate in the LP Vault. When the vault reaches {LP_VAULT_THRESHOLD} ETH, liquidity deploys to Uniswap V3 and locks forever.
       </p>
       <p className="text-[9px] font-mono text-[#717886] leading-[1.6] mb-4 max-w-[600px]">
-        * $AGENT transfers are disabled until the vault reaches 100% — protecting miners from fake LPs.
+        * $AGENT transfers are disabled until the vault reaches 100%, protecting miners from fake LPs.
       </p>
 
       {/* Progress bar */}
@@ -248,7 +248,7 @@ function LPVaultProgress() {
       <div className="flex items-center justify-between mt-2">
         <span className="text-[9px] font-mono text-[#717886]">0 ETH</span>
         <span className="text-[10px] font-mono text-[#4D9FFF] font-medium">
-          {balance !== null ? `${percent.toFixed(1)}%` : "—"}
+          {balance !== null ? `${percent.toFixed(1)}%` : "--"}
         </span>
         <span className="text-[9px] font-mono text-[#717886]">{LP_VAULT_THRESHOLD} ETH</span>
       </div>
@@ -458,7 +458,7 @@ export default function Home() {
                 </span>
               </div>
               <p className="text-[10px] text-[#4D9FFF] leading-[1.7]">
-                Show Me Human Language — identity verification at mint (LLM solves 3
+                Show Me Human Language: identity verification at mint (LLM solves 3
                 constraints). Mining uses algorithmic solving. Prove once, mine forever.
               </p>
             </div>
@@ -583,7 +583,7 @@ export default function Home() {
             <Coord value="04.00" />
             <Label>Inverse Bonding Curve · Sniper Protection</Label>
             <p className="text-[10px] text-[#4D9FFF] leading-[1.7] mt-2 mb-4 max-w-[400px]">
-              Linear inverse pricing — mint price decreases with supply. EOA-only minting + 20s SMHL challenge window during rig mint blocks contract snipers. No bots. No unfair advantage.
+              Linear inverse pricing: mint price decreases with supply. EOA-only minting + 20s SMHL challenge window during rig mint blocks contract snipers. No bots. No unfair advantage.
             </p>
             {(() => {
               const dotX = miningData ? 40 + (miningData.rigsMinted / 10000) * 350 : 52;

@@ -136,7 +136,7 @@ export default function MinePage() {
 
             {/* Security warning */}
             <p className="text-[8px] sm:text-[9px] font-mono text-[#717886] mt-2 sm:mt-3 leading-[1.7] max-w-[680px] mx-auto">
-              * This guide will instruct your AI agent to create Base wallet(s) and output file(s) containing private key(s). Use a local, secure device and properly backup and manage your private key(s) — or provide your own wallet private key.
+              * This guide will instruct your AI agent to create Base wallet(s) and output file(s) containing private key(s). Use a local, secure device and properly backup and manage your private key(s), or provide your own wallet private key.
             </p>
 
           </div>

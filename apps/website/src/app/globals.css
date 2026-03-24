@@ -63,7 +63,7 @@
   }
 }
 
-/* Dashboard grid — gap reveals background as grid lines */
+/* Dashboard grid: gap reveals background as grid lines */
 .dashboard {
   display: grid;
   gap: 1px;
@@ -73,7 +73,7 @@
   background: #060608;
 }
 
-/* Plus-sign grid — crosses at intersections via SVG */
+/* Plus-sign grid: crosses at intersections via SVG */
 .plus-grid {
   position: relative;
 }
@@ -102,7 +102,7 @@
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* CRT bloom — blurs a duplicate of the page on top for glowing highlights */
+/* CRT bloom: blurs a duplicate of the page on top for glowing highlights */
 .crt-bloom-overlay {
   position: fixed;
   inset: 0;
@@ -116,7 +116,7 @@
   );
 }
 
-/* Glow only — no color offset */
+/* Glow only, no color offset */
 .crt-glow h1,
 .crt-glow h2,
 .crt-glow p,
@@ -137,7 +137,7 @@
     0 0 120px rgba(0, 82, 255, 0.1);
 }
 
-/* Aberration only — color offset, no glow */
+/* Aberration only: color offset, no glow */
 .crt-aberration h1,
 .crt-aberration h2,
 .crt-aberration p,
@@ -180,7 +180,7 @@
     0 0 120px rgba(0, 82, 255, 0.1);
 }
 
-/* Blue glow on headings — layered for depth */
+/* Blue glow on headings, layered for depth */
 .glow-text {
   text-shadow:
     0 0 20px rgba(0, 82, 255, 0.3),
@@ -188,7 +188,7 @@
     0 0 120px rgba(0, 82, 255, 0.08);
 }
 
-/* Inset depth on grid cells — floating-in-darkness */
+/* Inset depth on grid cells: floating-in-darkness */
 .dashboard > * {
   box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
 }
