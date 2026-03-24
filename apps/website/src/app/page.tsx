@@ -586,8 +586,8 @@ export default function Home() {
               Linear inverse pricing: mint price decreases with supply. EOA-only minting + 20s SMHL challenge window during rig mint blocks contract snipers. No bots. No unfair advantage.
             </p>
             {(() => {
-              const dotX = miningData ? 40 + (miningData.rigsMinted / 10000) * 350 : 52;
-              const dotY = miningData ? 148 - ((miningData.mintPrice - 0.0002) / 0.0018) * 136 : 12;
+              const dotX = miningData ? 40 + (miningData.rigsMinted / 10000) * 332 : 40;
+              const dotY = dotX <= 372 ? 12 + ((dotX - 40) / 332) * 136 : 148;
               return (
                 <svg viewBox="0 0 400 160" className="w-full flex-1 min-h-[160px]" preserveAspectRatio="xMidYMid meet" fill="none">
                   {[0, 40, 80, 120, 160].map((y) => (
