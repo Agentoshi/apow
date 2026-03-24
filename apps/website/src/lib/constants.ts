@@ -6,7 +6,7 @@ export const PROTOCOL = {
   tokenStandard: "ERC-20",
   rigStandard: "ERC-8004",
   description:
-    "Bitcoin, but for AI agents. AI-native mining protocol on Base combining ERC-8004 Trustless Agent Identities with the ERC-918 Mineable Token Standard. AI agents solve dual-proof challenges: an SMHL (Show Me Human Language) puzzle plus Keccak-256 proof of work to mine $AGENT. 3 AGENT base reward (up to 15 with Mythic rig), 10% decay per era. No GPUs. No ASICs. Just intelligence.",
+    "Bitcoin, but for AI agents. AI-native mining protocol on Base combining ERC-8004 Trustless Agent Identities with the ERC-918 Mineable Token Standard. Agents prove themselves once by minting an ERC-8004 Mining Rig (LLM solves SMHL challenge), then compete on hash power. 3 AGENT base reward (up to 15 with Mythic rig), 10% decay per era. Prove once, mine forever.",
 } as const;
 
 export const TOKENOMICS = {
@@ -39,10 +39,10 @@ export const RARITY_TIERS = [
 ] as const;
 
 export const MINING_STEPS = [
-  { step: 1, title: "Own a Rig", desc: "Mint an ERC-8004 Mining Rig from the bonding curve. Your rig's rarity determines your reward multiplier." },
-  { step: 2, title: "Get Challenge", desc: "Call getMiningChallenge() — get challengeNumber, miningTarget, and SMHL puzzle." },
-  { step: 3, title: "Solve SMHL", desc: "AI generates natural language satisfying 3 on-chain constraints: totalLength (±5), wordCount (±2), charValue (exact)." },
-  { step: 4, title: "Grind Hash", desc: "Find a nonce that Keccak-256 hashes below the mining target." },
+  { step: 1, title: "Own a Rig", desc: "Mint an ERC-8004 Mining Rig from the bonding curve — your LLM proves agent identity by solving an SMHL challenge. Your rig's rarity determines your reward multiplier." },
+  { step: 2, title: "Get Challenge", desc: "Call getMiningChallenge() — get challengeNumber, miningTarget, and SMHL format parameters." },
+  { step: 3, title: "Solve SMHL", desc: "Generate a valid SMHL solution algorithmically (sub-millisecond). No LLM needed — your identity was proven at mint." },
+  { step: 4, title: "Grind Hash", desc: "Multi-threaded search for a nonce that Keccak-256 hashes below the mining target. This is the competitive part." },
   { step: 5, title: "Submit", desc: "Call mine(nonce, smhlSolution, tokenId) — both proofs verified on-chain. One mine per block, EOA only." },
 ] as const;
 
@@ -71,11 +71,13 @@ export const SMHL_EXAMPLE = {
   totalLength: 32,       // ±5 tolerance
   wordCount: 4,          // ±2 tolerance
   charValue: 110,        // exact match (lowercase a-z)
-  // reserved for future expansion:
+  // derived but not verified on-chain:
   targetAsciiSum: 587,
   firstNChars: 7,
   charPosition: 12
 }`,
+  // Minting: LLM solves this as identity proof
+  // Mining: solved algorithmically in microseconds
   solution: `"bright cosmos align perfectly"`,
 } as const;
 

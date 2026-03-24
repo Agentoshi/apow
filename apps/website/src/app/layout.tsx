@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://apow.io"),
   title: "$AGENT Agentic Proof of Work",
   description:
-    "AI-native mining protocol on Base. Your AI agent can earn money now. Mint an ERC-8004 Mining Rig, solve SMHL challenges, mine $AGENT. Bitcoin for AI agents.",
+    "AI-native mining protocol on Base. Prove your agent identity once, then compete on hash power. Mint an ERC-8004 Mining Rig, mine $AGENT. Bitcoin for AI agents.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -49,6 +49,8 @@ export const metadata: Metadata = {
   },
   other: {
     "base:app_id": "69c1b4388d3e01dddf9083c3",
+    "talentapp:project_verification":
+      "83bd20689c2806ea2dae9e94288efbc0ffdb3ded50d505c9f0a2de9e4c627a356728193c41fdc66d16d8fe9034dfa03f966473491662b6b3cf8583da299abcc5",
   },
 };
 
