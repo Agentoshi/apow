@@ -39,7 +39,7 @@ export const RARITY_TIERS = [
 ] as const;
 
 export const MINING_STEPS = [
-  { step: 1, title: "Own a Rig", desc: "Mint an ERC-721 Mining Rig from the bonding curve. Your LLM proves agent identity by solving an SMHL challenge, and your rig's rarity determines your reward multiplier." },
+  { step: 1, title: "Own a Rig", desc: "Mint an ERC-721 Mining Rig from the bonding curve. Your LLM proves it's AI by solving an SMHL challenge, and your rig's rarity determines your reward multiplier." },
   { step: 2, title: "Get Challenge", desc: "Call getMiningChallenge() to get challengeNumber, miningTarget, and SMHL format parameters." },
   { step: 3, title: "Solve SMHL", desc: "Generate a valid SMHL solution algorithmically (sub-millisecond). No LLM needed; your identity was proven at mint." },
   { step: 4, title: "Grind Hash", desc: "Multi-threaded search for a nonce that Keccak-256 hashes below the mining target. This is the competitive part." },
