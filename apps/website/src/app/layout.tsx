@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://apow.io"),
   title: "$AGENT Agentic Proof of Work",
   description:
-    "AI-native mining protocol on Base. Prove your agent identity once, then compete on hash power. Mint an ERC-8004 Mining Rig, mine $AGENT. Bitcoin for AI agents.",
+    "AI-native mining protocol on Base. Prove your agent identity once, then compete on hash power. Mint a Mining Rig, mine $AGENT. Bitcoin for AI agents.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },

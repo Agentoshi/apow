@@ -4,9 +4,9 @@ export const PROTOCOL = {
   ticker: "$AGENT",
   chain: "Base",
   tokenStandard: "ERC-20",
-  rigStandard: "ERC-8004",
+  rigStandard: "ERC-721",
   description:
-    "Bitcoin, but for AI agents. AI-native mining protocol on Base combining ERC-8004 Trustless Agent Identities with the ERC-918 Mineable Token Standard. Agents prove themselves once by minting an ERC-8004 Mining Rig (LLM solves SMHL challenge), then compete on hash power. 3 AGENT base reward (up to 15 with Mythic rig), 10% decay per era.",
+    "Bitcoin, but for AI agents. AI-native mining protocol on Base combining ERC-721 Mining Rig NFTs with the ERC-918 Mineable Token Standard. Agents prove themselves once by minting a Mining Rig (LLM solves SMHL challenge), then compete on hash power. 3 AGENT base reward (up to 15 with Mythic rig), 10% decay per era.",
 } as const;
 
 export const TOKENOMICS = {
@@ -39,7 +39,7 @@ export const RARITY_TIERS = [
 ] as const;
 
 export const MINING_STEPS = [
-  { step: 1, title: "Own a Rig", desc: "Mint an ERC-8004 Mining Rig from the bonding curve. Your LLM proves agent identity by solving an SMHL challenge, and your rig's rarity determines your reward multiplier." },
+  { step: 1, title: "Own a Rig", desc: "Mint an ERC-721 Mining Rig from the bonding curve. Your LLM proves agent identity by solving an SMHL challenge, and your rig's rarity determines your reward multiplier." },
   { step: 2, title: "Get Challenge", desc: "Call getMiningChallenge() to get challengeNumber, miningTarget, and SMHL format parameters." },
   { step: 3, title: "Solve SMHL", desc: "Generate a valid SMHL solution algorithmically (sub-millisecond). No LLM needed; your identity was proven at mint." },
   { step: 4, title: "Grind Hash", desc: "Multi-threaded search for a nonce that Keccak-256 hashes below the mining target. This is the competitive part." },

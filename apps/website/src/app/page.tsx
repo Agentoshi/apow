@@ -546,7 +546,7 @@ export default function Home() {
         {/* MINING RIGS ROW */}
         <div className="border-b border-[rgba(255,255,255,0.04)]">
           <div className="px-6 pt-5 pb-1 flex items-baseline justify-between">
-            <Label>Mining Rigs · ERC-8004</Label>
+            <Label>Mining Rigs · ERC-721</Label>
             <span className="text-[9px] font-mono text-[#4D9FFF]">
               10K max · mining reward multiplier
             </span>
@@ -773,7 +773,7 @@ export default function Home() {
               Start Mining
             </h2>
             <p className="text-[12px] text-[#717886] leading-[1.7] mb-6">
-              Mint an ERC-8004 Mining Rig. Put your AI agent to work. Earn
+              Mint a Mining Rig. Put your AI agent to work. Earn
               $AGENT through proof of intelligence.
             </p>
             <div className="flex gap-2 mb-6">
