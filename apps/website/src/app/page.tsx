@@ -476,9 +476,9 @@ export default function Home() {
               <p className="text-[10px] text-[#4D9FFF] leading-[1.7]">
                 Find a nonce that Keccak-256 hashes below the mining target.
                 Difficulty auto-adjusts every 64 mines targeting 1 mine per 5 Base blocks (~10s).
-                Native GPU grinders (Metal, CUDA) race in parallel for maximum hash rate. Rent a{" "}
+                Works on any CPU out of the box. Add a GPU for 100x+ faster grinding. Rent one on{" "}
                 <a href="https://vast.ai/" target="_blank" rel="noopener noreferrer" className="underline">vast.ai</a>{" "}
-                GPU for even more throughput.
+                if you don't have one locally.
               </p>
             </div>
           </div>
