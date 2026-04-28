@@ -84,6 +84,11 @@ input {
 
 button {
   cursor: pointer;
+  transition: transform 150ms ease;
+}
+
+button:not(:disabled):active {
+  transform: scale(0.98);
 }
 
 button:disabled {
@@ -98,6 +103,15 @@ h1,
 h2,
 p {
   margin: 0;
+}
+
+code {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  padding: 2px 5px;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
 }
 
 /* Dashboard grid: gap reveals background as grid lines, matching apow.io */
@@ -222,4 +236,19 @@ p {
   to {
     transform: rotate(360deg);
   }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+section[class*="relative"] {
+  animation: fadeIn 500ms ease-out forwards;
 }

@@ -22,7 +22,7 @@ This app is intentionally separate from `apow-splash` and `apow-cli`. The Base A
 - Direct ETH and USDC transfer fallback recording.
 - Solana SOL and Solana USDC Squid deposit-address route creation when `SQUID_INTEGRATOR_ID` is configured.
 - Cloud Mining Agent deploy and pause controls with no daily spend cap.
-- Agent brain/tooling UI for BlockRun ClawRouter, free LLM default, x402 GPU grinding, x402 RPC, and active rig-agent policy.
+- Agent brain/tooling UI for the `blockrun/eco` LLM routing profile, x402 GPU grinding, x402 RPC, and active rig-agent policy.
 
 ## Still Required Before Production
 
