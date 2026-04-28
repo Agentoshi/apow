@@ -1,0 +1,27 @@
+name = "apow-mini"
+main = "src/worker/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+[vars]
+ENVIRONMENT = "development"
+APOW_BUILDER_CODE = "bc_6wfeb1kd"
+BASE_CHAIN_ID = "8453"
+BASE_PAY_TESTNET = "false"
+
+# Before production deploy, create a D1 database and uncomment this binding.
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "apow-mini"
+# database_id = "<cloudflare-d1-database-id>"
+#
+# Required production secrets:
+# wrangler secret put SESSION_SECRET
+# wrangler secret put SIGNER_SECRET
+# wrangler secret put BASE_RPC_URL
+# wrangler secret put SQUID_INTEGRATOR_ID
