@@ -35,8 +35,16 @@ export const api = {
   dashboard() {
     return request<DashboardState>("/api/me");
   },
-  createWallet() {
-    return request<{ wallet: NonNullable<DashboardState["wallet"]> }>("/api/wallets", { method: "POST" });
+  createWallet(address: `0x${string}`, derivationPath: string) {
+    return request<{ wallet: NonNullable<DashboardState["wallet"]> }>("/api/wallets", {
+      method: "POST",
+      body: JSON.stringify({ address, derivationPath }),
+    });
+  },
+  confirmWalletBackup() {
+    return request<{ wallet: NonNullable<DashboardState["wallet"]> }>("/api/wallets/backup-confirmed", {
+      method: "POST",
+    });
   },
   pauseWallet() {
     return request<{ wallet: NonNullable<DashboardState["wallet"]> }>("/api/wallets/pause", { method: "POST" });

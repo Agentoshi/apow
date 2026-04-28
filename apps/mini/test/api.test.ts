@@ -7,7 +7,6 @@ import type { Env } from "../src/server/env";
 const env: Env = {
   ENVIRONMENT: "test",
   SESSION_SECRET: "api-test-session-secret",
-  SIGNER_SECRET: "api-test-signer-secret",
 };
 
 async function json<T>(response: Response): Promise<T> {
@@ -53,13 +52,58 @@ describe("API auth and wallet flow", () => {
     const walletResponse = await app.fetch(
       new Request("http://apow.test/api/wallets", {
         method: "POST",
-        headers: { cookie: cookie ?? "" },
+        body: JSON.stringify({
+          address: "0x1111111111111111111111111111111111111111",
+          derivationPath: "m/44'/60'/0'/0/0",
+        }),
+        headers: {
+          cookie: cookie ?? "",
+          "content-type": "application/json",
+        },
       }),
       env,
     );
     expect(walletResponse.status).toBe(200);
-    const body = await json<{ wallet: { address: string; encryptedPrivateKey?: string } }>(walletResponse);
+    const body = await json<{ wallet: { address: string; privateKey?: string; mnemonic?: string } }>(walletResponse);
     expect(body.wallet.address).toMatch(/^0x[a-fA-F0-9]{40}$/);
-    expect(body.wallet.encryptedPrivateKey).toBeUndefined();
+    expect(body.wallet.privateKey).toBeUndefined();
+    expect(body.wallet.mnemonic).toBeUndefined();
+
+    const blockedFunding = await app.fetch(
+      new Request("http://apow.test/api/funding/intents", {
+        method: "POST",
+        body: JSON.stringify({ sourceAsset: "BASE_ETH", amount: "0.01" }),
+        headers: {
+          cookie: cookie ?? "",
+          "content-type": "application/json",
+        },
+      }),
+      env,
+    );
+    expect(blockedFunding.status).toBe(409);
+
+    const backupResponse = await app.fetch(
+      new Request("http://apow.test/api/wallets/backup-confirmed", {
+        method: "POST",
+        headers: {
+          cookie: cookie ?? "",
+          "content-type": "application/json",
+        },
+      }),
+      env,
+    );
+    expect(backupResponse.status).toBe(200);
+
+    const exportResponse = await app.fetch(
+      new Request("http://apow.test/api/wallets/export", {
+        method: "POST",
+        headers: {
+          cookie: cookie ?? "",
+          "content-type": "application/json",
+        },
+      }),
+      env,
+    );
+    expect(exportResponse.status).toBe(410);
   });
 });

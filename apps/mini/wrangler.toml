@@ -1,6 +1,6 @@
 name = "apow-mini"
 main = "src/worker/index.ts"
-compatibility_date = "2025-01-01"
+compatibility_date = "2026-04-28"
 compatibility_flags = ["nodejs_compat"]
 
 [assets]
@@ -9,19 +9,20 @@ binding = "ASSETS"
 not_found_handling = "single-page-application"
 
 [vars]
-ENVIRONMENT = "development"
+ENVIRONMENT = "production"
 APOW_BUILDER_CODE = "bc_6wfeb1kd"
 BASE_CHAIN_ID = "8453"
 BASE_PAY_TESTNET = "false"
+BASE_RPC_URL = "https://mainnet.base.org"
+ENABLE_LIVE_BASE_PAY_VERIFICATION = "true"
 
-# Before production deploy, create a D1 database and uncomment this binding.
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "apow-mini"
-# database_id = "<cloudflare-d1-database-id>"
-#
-# Required production secrets:
+[[d1_databases]]
+binding = "DB"
+database_name = "apow-mini"
+database_id = "<D1_DATABASE_ID>"
+
+# Required production secret:
 # wrangler secret put SESSION_SECRET
-# wrangler secret put SIGNER_SECRET
-# wrangler secret put BASE_RPC_URL
+#
+# Required for Solana funding routes:
 # wrangler secret put SQUID_INTEGRATOR_ID

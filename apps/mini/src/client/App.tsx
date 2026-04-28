@@ -30,6 +30,7 @@ import {
 } from "wagmi";
 import { parseEther, parseUnits } from "viem";
 import { api } from "./lib/api";
+import { generateMiningWallet, type GeneratedMiningWallet } from "./lib/miningWallet";
 import { BASESCAN_BASE_URL, CONTRACTS, DEFAULT_DAILY_CAP_USDC, erc20Abi } from "../shared/constants";
 import { sourceAssetLabel } from "../shared/funding";
 import type { DashboardState, SourceAsset } from "../shared/types";
@@ -53,6 +54,7 @@ function useDashboard() {
 export function App() {
   const queryClient = useQueryClient();
   const dashboard = useDashboard();
+  const [pendingWalletBackup, setPendingWalletBackup] = useState<GeneratedMiningWallet | null>(null);
   const { address, isConnected, isReconnecting, chainId } = useAccount();
   const { connectors, connect } = useConnect();
   const { disconnect } = useDisconnect();
@@ -92,8 +94,26 @@ export function App() {
   });
 
   const createWallet = useMutation({
-    mutationFn: api.createWallet,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+    mutationFn: async () => {
+      const generated = generateMiningWallet();
+      setPendingWalletBackup(generated);
+      return generated;
+    },
+  });
+
+  const confirmWalletBackup = useMutation({
+    mutationFn: async () => {
+      if (!pendingWalletBackup) throw new Error("No generated wallet to register");
+      const { wallet } = await api.createWallet(pendingWalletBackup.address, pendingWalletBackup.derivationPath);
+      if (wallet.address.toLowerCase() !== pendingWalletBackup.address.toLowerCase()) {
+        throw new Error("This account already has a different mining wallet.");
+      }
+      return api.confirmWalletBackup();
+    },
+    onSuccess: () => {
+      setPendingWalletBackup(null);
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
   });
 
   const startMining = useMutation({
@@ -164,10 +184,18 @@ export function App() {
         </Panel>
       )}
 
-      {isSignedIn && !state?.wallet && (
+      {isSignedIn && !state?.wallet && pendingWalletBackup && (
+        <SeedBackupPanel
+          generated={pendingWalletBackup}
+          confirm={() => confirmWalletBackup.mutate()}
+          busy={confirmWalletBackup.isPending}
+        />
+      )}
+
+      {isSignedIn && !state?.wallet && !pendingWalletBackup && (
         <Panel title="Create hosted mining wallet" icon={<Bot size={18} />}>
           <p className="muted">
-            APoW creates a dedicated EOA for minting and mining because the live contracts reject smart-wallet callers.
+            APoW uses one dedicated mining EOA per Base Account because the live contracts reject smart-wallet callers. This wallet can own multiple rigs, but only one rig can mine at a time.
           </p>
           <button className="primary" onClick={() => createWallet.mutate()} disabled={createWallet.isPending}>
             {createWallet.isPending ? <Loader2 className="spin" size={16} /> : <Bot size={16} />}
@@ -239,6 +267,12 @@ function MiningPanel(props: {
           <strong>Hosted APoW agent</strong>
           <span>{props.state.wallet?.address}</span>
         </div>
+      </div>
+      <div className="rule-box">
+        <strong>Rig rule</strong>
+        <span>
+          You may mint multiple mining rigs into this wallet, but APoW mines with exactly one active rig. The app defaults to the rig with the best hashpower multiplier.
+        </span>
       </div>
       <div className="capability">
         <ShieldCheck size={16} />
@@ -332,6 +366,37 @@ function FundingPanel({ state }: { state: DashboardState }) {
   );
 }
 
+function SeedBackupPanel(props: {
+  generated: GeneratedMiningWallet;
+  confirm: () => void;
+  busy: boolean;
+}) {
+  return (
+    <section className="panel seed-panel">
+      <div className="panel-title">
+        <KeyRound size={18} />
+        <h2>Back up seed phrase</h2>
+      </div>
+      <p className="warning">
+        This is shown once. APoW does not store this seed phrase or private key. If it is lost, APoW cannot export or recover this mining wallet.
+      </p>
+      <div className="seed-grid">
+        {props.generated.mnemonic.split(" ").map((word, index) => (
+          <div className="seed-word" key={`${word}-${index}`}>
+            <span>{index + 1}</span>
+            <strong>{word}</strong>
+          </div>
+        ))}
+      </div>
+      <p className="muted">Wallet: {props.generated.address}</p>
+      <button className="primary" onClick={props.confirm} disabled={props.busy}>
+        {props.busy ? <Loader2 className="spin" size={16} /> : <ShieldCheck size={16} />}
+        I backed it up
+      </button>
+    </section>
+  );
+}
+
 function WalletPanel({ state }: { state: DashboardState }) {
   const queryClient = useQueryClient();
   const pauseWallet = useMutation({
@@ -349,11 +414,12 @@ function WalletPanel({ state }: { state: DashboardState }) {
           <ExternalLink size={16} />
         </a>
       </div>
+      <p className="muted">One hosted mining wallet is allowed per signed-in Base Account.</p>
       <button className="secondary" onClick={() => pauseWallet.mutate()} disabled={pauseWallet.isPending}>
         {state.wallet?.paused ? <Play size={16} /> : <CirclePause size={16} />}
         {state.wallet?.paused ? "Resume wallet" : "Pause wallet"}
       </button>
-      <p className="muted">Key export is API-backed and requires fresh SIWE reauthentication before the private key is returned.</p>
+      <p className="muted">APoW does not store this wallet's seed phrase or private key. Back up the phrase shown at creation or this wallet cannot be exported or recovered.</p>
     </Panel>
   );
 }

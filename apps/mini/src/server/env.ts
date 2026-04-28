@@ -3,7 +3,6 @@ export interface Env {
   DB?: D1Database;
   ENVIRONMENT?: string;
   SESSION_SECRET?: string;
-  SIGNER_SECRET?: string;
   BASE_RPC_URL?: string;
   BASE_CHAIN_ID?: string;
   BASE_PAY_TESTNET?: string;
@@ -16,7 +15,7 @@ export function isProduction(env: Env): boolean {
   return env.ENVIRONMENT === "production";
 }
 
-export function requiredSecret(env: Env, key: "SESSION_SECRET" | "SIGNER_SECRET"): string {
+export function requiredSecret(env: Env, key: "SESSION_SECRET"): string {
   const value = env[key];
   if (value) return value;
   if (isProduction(env)) {

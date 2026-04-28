@@ -1,173 +1,102 @@
-import type { Address, Hex, TypedData } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-import { generatePrivateKey } from "viem/accounts";
+import type { Address } from "viem";
 import type { MiningWallet, PublicMiningWallet } from "../shared/types";
-import { decryptString, encryptString, nowIso, randomId } from "./crypto";
-import { requiredSecret, type Env } from "./env";
+import { DEFAULT_DERIVATION_PATH } from "../shared/constants";
+import { nowIso, randomId } from "./crypto";
 import type { StorageAdapter } from "./storage";
-
-export type PolicyReason =
-  | "mint"
-  | "mine"
-  | "x402-rpc"
-  | "x402-llm"
-  | "x402-grind"
-  | "swap"
-  | "withdraw"
-  | "export";
-
-export interface PolicyContext {
-  userId: string;
-  walletId: string;
-  reason: PolicyReason;
-  requestId: string;
-  maxUsd?: number;
-}
-
-export interface SignerBackend {
-  createWallet(userId: string): Promise<PublicMiningWallet>;
-  exportSecret(wallet: MiningWallet, policy: PolicyContext): Promise<{ privateKey: Hex }>;
-  pauseWallet(wallet: MiningWallet): Promise<PublicMiningWallet>;
-  resumeWallet(wallet: MiningWallet): Promise<PublicMiningWallet>;
-  signTypedData(wallet: MiningWallet, typedData: {
-    domain?: Record<string, unknown>;
-    types: TypedData;
-    primaryType: string;
-    message: Record<string, unknown>;
-  }, policy: PolicyContext): Promise<Hex>;
-}
 
 export function publicWallet(wallet: MiningWallet): PublicMiningWallet {
   return {
     id: wallet.id,
     userId: wallet.userId,
     address: wallet.address,
+    derivationPath: wallet.derivationPath,
+    custodyModel: wallet.custodyModel,
     paused: wallet.paused,
     createdAt: wallet.createdAt,
-    exportedAt: wallet.exportedAt ?? null,
+    backupConfirmedAt: wallet.backupConfirmedAt ?? null,
   };
-}
-
-export class EncryptedHotWalletSigner implements SignerBackend {
-  constructor(
-    private readonly env: Env,
-    private readonly storage: StorageAdapter,
-  ) {}
-
-  async createWallet(userId: string): Promise<PublicMiningWallet> {
-    const existing = await this.storage.getWalletByUser(userId);
-    if (existing) return publicWallet(existing);
-
-    const privateKey = generatePrivateKey();
-    const account = privateKeyToAccount(privateKey);
-    const wallet: MiningWallet = {
-      id: randomId("wallet"),
-      userId,
-      address: account.address,
-      encryptedPrivateKey: await encryptString(privateKey, requiredSecret(this.env, "SIGNER_SECRET")),
-      paused: false,
-      createdAt: nowIso(),
-      exportedAt: null,
-    };
-
-    await this.storage.createWallet(wallet);
-    await this.storage.addAuditEvent({
-      userId,
-      walletId: wallet.id,
-      action: "wallet.created",
-      metadata: { address: wallet.address, signer: "encrypted-hot-wallet" },
-    });
-    return publicWallet(wallet);
-  }
-
-  async exportSecret(wallet: MiningWallet, policy: PolicyContext): Promise<{ privateKey: Hex }> {
-    this.assertPolicy(wallet, policy, "export");
-    const privateKey = (await decryptString(
-      wallet.encryptedPrivateKey ?? "",
-      requiredSecret(this.env, "SIGNER_SECRET"),
-    )) as Hex;
-    wallet.exportedAt = nowIso();
-    await this.storage.updateWallet(wallet);
-    await this.storage.addAuditEvent({
-      userId: wallet.userId,
-      walletId: wallet.id,
-      action: "wallet.exported",
-      metadata: { requestId: policy.requestId },
-    });
-    return { privateKey };
-  }
-
-  async pauseWallet(wallet: MiningWallet): Promise<PublicMiningWallet> {
-    wallet.paused = true;
-    await this.storage.updateWallet(wallet);
-    await this.storage.addAuditEvent({
-      userId: wallet.userId,
-      walletId: wallet.id,
-      action: "wallet.paused",
-      metadata: {},
-    });
-    return publicWallet(wallet);
-  }
-
-  async resumeWallet(wallet: MiningWallet): Promise<PublicMiningWallet> {
-    wallet.paused = false;
-    await this.storage.updateWallet(wallet);
-    await this.storage.addAuditEvent({
-      userId: wallet.userId,
-      walletId: wallet.id,
-      action: "wallet.resumed",
-      metadata: {},
-    });
-    return publicWallet(wallet);
-  }
-
-  async signTypedData(wallet: MiningWallet, typedData: {
-    domain?: Record<string, unknown>;
-    types: TypedData;
-    primaryType: string;
-    message: Record<string, unknown>;
-  }, policy: PolicyContext): Promise<Hex> {
-    if (!policy.reason.startsWith("x402")) {
-      throw new Error("Typed data signing is only enabled for approved x402 resources");
-    }
-    this.assertPolicy(wallet, policy, policy.reason);
-    const privateKey = (await decryptString(
-      wallet.encryptedPrivateKey ?? "",
-      requiredSecret(this.env, "SIGNER_SECRET"),
-    )) as Hex;
-    const account = privateKeyToAccount(privateKey);
-    const signature = await account.signTypedData({
-      domain: typedData.domain,
-      types: typedData.types,
-      primaryType: typedData.primaryType,
-      message: typedData.message,
-    });
-    await this.storage.addAuditEvent({
-      userId: wallet.userId,
-      walletId: wallet.id,
-      action: "wallet.sign_typed_data",
-      metadata: { reason: policy.reason, requestId: policy.requestId, maxUsd: policy.maxUsd ?? null },
-    });
-    return signature;
-  }
-
-  private assertPolicy(wallet: MiningWallet, policy: PolicyContext, expected: PolicyReason): void {
-    if (wallet.userId !== policy.userId || wallet.id !== policy.walletId) {
-      throw new Error("Signer policy context does not match wallet");
-    }
-    if (wallet.paused && expected !== "export") {
-      throw new Error("Wallet is paused");
-    }
-    if (policy.reason !== expected) {
-      throw new Error(`Signer policy reason must be ${expected}`);
-    }
-  }
-}
-
-export function signerFor(env: Env, storage: StorageAdapter): SignerBackend {
-  return new EncryptedHotWalletSigner(env, storage);
 }
 
 export function isAddressLike(value: unknown): value is Address {
   return typeof value === "string" && /^0x[a-fA-F0-9]{40}$/.test(value);
+}
+
+export async function registerClientSeedWallet(input: {
+  storage: StorageAdapter;
+  userId: string;
+  address: `0x${string}`;
+  derivationPath?: string;
+}): Promise<PublicMiningWallet> {
+  const existing = await input.storage.getWalletByUser(input.userId);
+  if (existing) return publicWallet(existing);
+
+  const wallet: MiningWallet = {
+    id: randomId("wallet"),
+    userId: input.userId,
+    address: input.address,
+    derivationPath: input.derivationPath ?? DEFAULT_DERIVATION_PATH,
+    custodyModel: "client_seed_phrase",
+    paused: false,
+    createdAt: nowIso(),
+    backupConfirmedAt: null,
+  };
+
+  await input.storage.createWallet(wallet);
+  await input.storage.addAuditEvent({
+    userId: input.userId,
+    walletId: wallet.id,
+    action: "wallet.registered",
+    metadata: {
+      address: wallet.address,
+      custodyModel: wallet.custodyModel,
+      storesPrivateKey: false,
+      storesSeedPhrase: false,
+    },
+  });
+  return publicWallet(wallet);
+}
+
+export async function markWalletBackupConfirmed(input: {
+  storage: StorageAdapter;
+  wallet: MiningWallet;
+}): Promise<PublicMiningWallet> {
+  input.wallet.backupConfirmedAt = nowIso();
+  await input.storage.updateWallet(input.wallet);
+  await input.storage.addAuditEvent({
+    userId: input.wallet.userId,
+    walletId: input.wallet.id,
+    action: "wallet.backup_confirmed",
+    metadata: {},
+  });
+  return publicWallet(input.wallet);
+}
+
+export async function pauseWallet(input: {
+  storage: StorageAdapter;
+  wallet: MiningWallet;
+}): Promise<PublicMiningWallet> {
+  input.wallet.paused = true;
+  await input.storage.updateWallet(input.wallet);
+  await input.storage.addAuditEvent({
+    userId: input.wallet.userId,
+    walletId: input.wallet.id,
+    action: "wallet.paused",
+    metadata: {},
+  });
+  return publicWallet(input.wallet);
+}
+
+export async function resumeWallet(input: {
+  storage: StorageAdapter;
+  wallet: MiningWallet;
+}): Promise<PublicMiningWallet> {
+  input.wallet.paused = false;
+  await input.storage.updateWallet(input.wallet);
+  await input.storage.addAuditEvent({
+    userId: input.wallet.userId,
+    walletId: input.wallet.id,
+    action: "wallet.resumed",
+    metadata: {},
+  });
+  return publicWallet(input.wallet);
 }

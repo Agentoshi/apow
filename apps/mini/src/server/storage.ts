@@ -76,10 +76,11 @@ function asWallet(row: Record<string, unknown>): MiningWallet {
     id: String(row.id),
     userId: String(row.user_id),
     address: String(row.address) as `0x${string}`,
-    encryptedPrivateKey: String(row.encrypted_private_key),
+    derivationPath: String(row.derivation_path),
+    custodyModel: "client_seed_phrase",
     paused: Number(row.paused) === 1,
     createdAt: String(row.created_at),
-    exportedAt: row.exported_at ? String(row.exported_at) : null,
+    backupConfirmedAt: row.backup_confirmed_at ? String(row.backup_confirmed_at) : null,
   };
 }
 
@@ -205,24 +206,25 @@ export class D1Storage implements StorageAdapter {
   async createWallet(wallet: MiningWallet): Promise<void> {
     await this.db
       .prepare(
-        "INSERT INTO mining_wallets (id, user_id, address, encrypted_private_key, paused, created_at, exported_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO mining_wallets (id, user_id, address, derivation_path, custody_model, paused, created_at, backup_confirmed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
       )
       .bind(
         wallet.id,
         wallet.userId,
         wallet.address,
-        wallet.encryptedPrivateKey,
+        wallet.derivationPath,
+        wallet.custodyModel,
         wallet.paused ? 1 : 0,
         wallet.createdAt,
-        wallet.exportedAt ?? null,
+        wallet.backupConfirmedAt ?? null,
       )
       .run();
   }
 
   async updateWallet(wallet: MiningWallet): Promise<void> {
     await this.db
-      .prepare("UPDATE mining_wallets SET paused = ?, exported_at = ? WHERE id = ?")
-      .bind(wallet.paused ? 1 : 0, wallet.exportedAt ?? null, wallet.id)
+      .prepare("UPDATE mining_wallets SET paused = ?, backup_confirmed_at = ? WHERE id = ?")
+      .bind(wallet.paused ? 1 : 0, wallet.backupConfirmedAt ?? null, wallet.id)
       .run();
   }
 

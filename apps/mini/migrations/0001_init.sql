@@ -25,10 +25,11 @@ CREATE TABLE IF NOT EXISTS mining_wallets (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
   address TEXT NOT NULL UNIQUE,
-  encrypted_private_key TEXT NOT NULL,
+  derivation_path TEXT NOT NULL,
+  custody_model TEXT NOT NULL,
   paused INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL,
-  exported_at TEXT,
+  backup_confirmed_at TEXT,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
@@ -89,7 +90,7 @@ CREATE TABLE IF NOT EXISTS audit_events (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
-CREATE INDEX IF NOT EXISTS idx_wallets_user_id ON mining_wallets(user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_wallets_user_id ON mining_wallets(user_id);
 CREATE INDEX IF NOT EXISTS idx_funding_user_id ON funding_intents(user_id);
 CREATE INDEX IF NOT EXISTS idx_ledger_user_id ON ledger_entries(user_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_user_id ON mining_jobs(user_id);

@@ -32,19 +32,22 @@ export interface MiningWallet {
   id: string;
   userId: string;
   address: `0x${string}`;
-  encryptedPrivateKey?: string;
+  derivationPath: string;
+  custodyModel: "client_seed_phrase";
   paused: boolean;
   createdAt: string;
-  exportedAt?: string | null;
+  backupConfirmedAt?: string | null;
 }
 
 export interface PublicMiningWallet {
   id: string;
   userId: string;
   address: `0x${string}`;
+  derivationPath: string;
+  custodyModel: "client_seed_phrase";
   paused: boolean;
   createdAt: string;
-  exportedAt?: string | null;
+  backupConfirmedAt?: string | null;
 }
 
 export interface FundingIntent {

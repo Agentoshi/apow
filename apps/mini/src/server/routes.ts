@@ -10,7 +10,14 @@ import type { Env } from "./env";
 import { isProduction } from "./env";
 import { assertBasePayMatchesIntent, getVerifiedBasePayStatus } from "./basePay";
 import { verifySiwe } from "./auth";
-import { publicWallet, signerFor } from "./signer";
+import {
+  isAddressLike,
+  markWalletBackupConfirmed,
+  pauseWallet,
+  publicWallet,
+  registerClientSeedWallet,
+  resumeWallet,
+} from "./signer";
 import { storageFor, type Session } from "./storage";
 import { getSquidDepositAddress } from "./squid";
 
@@ -168,11 +175,29 @@ app.get("/api/me", async (c) => {
 });
 
 app.post("/api/wallets", async (c) => {
+  const body = await c.req
+    .json<{ address?: `0x${string}`; derivationPath?: string }>()
+    .catch(() => ({} as { address?: `0x${string}`; derivationPath?: string }));
+  if (!isAddressLike(body.address)) {
+    return c.json({ error: "Client-derived wallet address is required" }, 400);
+  }
   const storage = storageFor(c.env.DB);
   const session = c.get("session");
-  const signer = signerFor(c.env, storage);
-  const wallet = await signer.createWallet(session.userId);
+  const wallet = await registerClientSeedWallet({
+    storage,
+    userId: session.userId,
+    address: body.address,
+    derivationPath: body.derivationPath,
+  });
   return c.json({ wallet });
+});
+
+app.post("/api/wallets/backup-confirmed", async (c) => {
+  const storage = storageFor(c.env.DB);
+  const session = c.get("session");
+  const wallet = await storage.getWalletByUser(session.userId);
+  if (!wallet) return c.json({ error: "No hosted mining wallet" }, 404);
+  return c.json({ wallet: await markWalletBackupConfirmed({ storage, wallet }) });
 });
 
 app.post("/api/wallets/pause", async (c) => {
@@ -180,7 +205,7 @@ app.post("/api/wallets/pause", async (c) => {
   const session = c.get("session");
   const wallet = await storage.getWalletByUser(session.userId);
   if (!wallet) return c.json({ error: "No hosted mining wallet" }, 404);
-  return c.json({ wallet: await signerFor(c.env, storage).pauseWallet(wallet) });
+  return c.json({ wallet: await pauseWallet({ storage, wallet }) });
 });
 
 app.post("/api/wallets/resume", async (c) => {
@@ -188,40 +213,17 @@ app.post("/api/wallets/resume", async (c) => {
   const session = c.get("session");
   const wallet = await storage.getWalletByUser(session.userId);
   if (!wallet) return c.json({ error: "No hosted mining wallet" }, 404);
-  return c.json({ wallet: await signerFor(c.env, storage).resumeWallet(wallet) });
+  return c.json({ wallet: await resumeWallet({ storage, wallet }) });
 });
 
 app.post("/api/wallets/export", async (c) => {
-  const body = await c.req
-    .json<{ confirm?: string; message?: string; signature?: `0x${string}` }>()
-    .catch(() => ({} as { confirm?: string; message?: string; signature?: `0x${string}` }));
-  if (body.confirm !== "EXPORT_APOW_MINING_KEY" || !body.message || !body.signature) {
-    return c.json({ error: "Fresh SIWE reauthentication and export confirmation are required" }, 400);
-  }
-  const storage = storageFor(c.env.DB);
-  const session = c.get("session");
-  const parsedNonce = /Nonce: ([A-Za-z0-9_-]+)/.exec(body.message)?.[1];
-  if (!parsedNonce) return c.json({ error: "SIWE message nonce not found" }, 400);
-  const nonce = await storage.consumeNonce(parsedNonce, "export");
-  if (!nonce || nonce.expiresAt < Date.now()) return c.json({ error: "Export nonce expired or already used" }, 400);
-  const verified = await verifySiwe({
-    message: body.message,
-    signature: body.signature,
-    expectedNonce: nonce.nonce,
-    env: c.env,
-  });
-  if (verified.address.toLowerCase() !== session.controlAddress) {
-    return c.json({ error: "Export signature does not match session wallet" }, 403);
-  }
-  const wallet = await storage.getWalletByUser(session.userId);
-  if (!wallet) return c.json({ error: "No hosted mining wallet" }, 404);
-  const exported = await signerFor(c.env, storage).exportSecret(wallet, {
-    userId: session.userId,
-    walletId: wallet.id,
-    reason: "export",
-    requestId: randomId("req"),
-  });
-  return c.json({ privateKey: exported.privateKey });
+  return c.json(
+    {
+      error:
+        "APoW does not store mining wallet seed phrases or private keys. Export is only possible from the user's backed-up seed phrase.",
+    },
+    410,
+  );
 });
 
 app.post("/api/funding/intents", async (c) => {
@@ -238,6 +240,7 @@ app.post("/api/funding/intents", async (c) => {
   const session = c.get("session");
   const wallet = await storage.getWalletByUser(session.userId);
   if (!wallet) return c.json({ error: "Create hosted mining wallet first" }, 409);
+  if (!wallet.backupConfirmedAt) return c.json({ error: "Back up the mining wallet seed phrase before funding." }, 409);
   let depositAddress: string = wallet.address;
   let bridgeRequestId: string | null = null;
   let expectedReceive: string | null = null;
@@ -363,6 +366,7 @@ app.post("/api/mining/start", async (c) => {
   const session = c.get("session");
   const wallet = await storage.getWalletByUser(session.userId);
   if (!wallet) return c.json({ error: "Create hosted mining wallet first" }, 409);
+  if (!wallet.backupConfirmedAt) return c.json({ error: "Back up the mining wallet seed phrase before mining." }, 409);
   if (wallet.paused) return c.json({ error: "Wallet is paused" }, 409);
   const now = nowIso();
   const existing = await storage.getMiningJob(session.userId);
@@ -404,34 +408,13 @@ app.post("/api/mining/pause", async (c) => {
 });
 
 app.post("/api/x402/sign", async (c) => {
-  const body = await c.req
-    .json<{
-      walletId?: string;
-      reason?: "x402-rpc" | "x402-llm" | "x402-grind";
-      typedData?: { domain?: Record<string, unknown>; types: never; primaryType: string; message: Record<string, unknown> };
-      maxUsd?: number;
-    }>()
-    .catch(() => ({} as {
-      walletId?: string;
-      reason?: "x402-rpc" | "x402-llm" | "x402-grind";
-      typedData?: { domain?: Record<string, unknown>; types: never; primaryType: string; message: Record<string, unknown> };
-      maxUsd?: number;
-    }));
-  if (!body.walletId || !body.reason || !body.typedData) {
-    return c.json({ error: "walletId, reason, and typedData are required" }, 400);
-  }
-  const storage = storageFor(c.env.DB);
-  const session = c.get("session");
-  const wallet = await storage.getWalletByUser(session.userId);
-  if (!wallet || wallet.id !== body.walletId) return c.json({ error: "Wallet not found" }, 404);
-  const signature = await signerFor(c.env, storage).signTypedData(wallet, body.typedData, {
-    userId: session.userId,
-    walletId: wallet.id,
-    reason: body.reason,
-    requestId: randomId("req"),
-    maxUsd: body.maxUsd,
-  });
-  return c.json({ signature });
+  return c.json(
+    {
+      error:
+        "Server-side x402 signing is disabled because APoW does not store mining wallet keys. The client must sign with the backed-up seed phrase or a future non-custodial session signer.",
+    },
+    410,
+  );
 });
 
 app.get("/api/parse/usdc/:amount", (c) => {
