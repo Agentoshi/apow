@@ -124,7 +124,6 @@ function asMiningJob(row: Record<string, unknown>): MiningJob {
     userId: String(row.user_id),
     walletId: String(row.wallet_id),
     status: String(row.status) as MiningJob["status"],
-    dailyCapUsdc: String(row.daily_cap_usdc),
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
     lastError: row.last_error ? String(row.last_error) : null,
@@ -340,9 +339,9 @@ export class D1Storage implements StorageAdapter {
   async upsertMiningJob(job: MiningJob): Promise<void> {
     await this.db
       .prepare(
-        "INSERT INTO mining_jobs (id, user_id, wallet_id, status, daily_cap_usdc, created_at, updated_at, last_error) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET status = excluded.status, daily_cap_usdc = excluded.daily_cap_usdc, updated_at = excluded.updated_at, last_error = excluded.last_error",
+        "INSERT INTO mining_jobs (id, user_id, wallet_id, status, created_at, updated_at, last_error) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET status = excluded.status, updated_at = excluded.updated_at, last_error = excluded.last_error",
       )
-      .bind(job.id, job.userId, job.walletId, job.status, job.dailyCapUsdc, job.createdAt, job.updatedAt, job.lastError ?? null)
+      .bind(job.id, job.userId, job.walletId, job.status, job.createdAt, job.updatedAt, job.lastError ?? null)
       .run();
   }
 

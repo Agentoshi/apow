@@ -1,4 +1,5 @@
 import { pay } from "@base-org/account";
+import { SignInWithBaseButton } from "@base-org/account-ui/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDownToLine,
@@ -29,7 +30,7 @@ import {
   useWriteContract,
 } from "wagmi";
 import { base } from "wagmi/chains";
-import { BASESCAN_BASE_URL, CONTRACTS, DEFAULT_DAILY_CAP_USDC, erc20Abi } from "../shared/constants";
+import { BASESCAN_BASE_URL, CONTRACTS, erc20Abi } from "../shared/constants";
 import { sourceAssetLabel } from "../shared/funding";
 import type { DashboardState, SourceAsset } from "../shared/types";
 import { api } from "./lib/api";
@@ -43,6 +44,11 @@ const secondaryButton =
   "inline-flex h-9 w-full items-center justify-center gap-2 border border-[rgba(255,255,255,0.08)] px-4 text-[11px] font-mono uppercase tracking-[0.08em] text-[#4D9FFF] transition-colors hover:border-[rgba(255,255,255,0.15)] hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 const iconButton =
   "inline-flex h-9 w-9 flex-none items-center justify-center border border-[rgba(255,255,255,0.08)] text-[#4D9FFF] transition-colors hover:border-[#4D9FFF]/30 hover:bg-[#0052FF]/10 hover:text-white";
+
+type SignInInput = {
+  address: `0x${string}`;
+  chainId: number;
+};
 
 function shortAddress(address?: string | null): string {
   if (!address) return "-";
@@ -62,8 +68,8 @@ export function App() {
   const queryClient = useQueryClient();
   const dashboard = useDashboard();
   const [pendingWalletBackup, setPendingWalletBackup] = useState<GeneratedMiningWallet | null>(null);
-  const { address, isConnected, isReconnecting, chainId } = useAccount();
-  const { connectors, connect } = useConnect();
+  const { address, isConnected, isReconnecting, chainId, connector: activeConnector } = useAccount();
+  const { connectors, connect, connectAsync, isPending: isConnectingWallet, error: connectError } = useConnect();
   const { disconnect } = useDisconnect();
   const { signMessageAsync, isPending: isSigning } = useSignMessage();
   const { switchChain, isPending: isSwitching } = useSwitchChain();
@@ -72,14 +78,27 @@ export function App() {
     const atomic = capabilities.data?.[base.id]?.atomic;
     return atomic?.status === "ready" || atomic?.status === "supported";
   }, [capabilities.data]);
+  const baseAccountConnector = useMemo(
+    () => connectors.find((connector) => connector.name.toLowerCase().includes("base")) ?? connectors[0],
+    [connectors],
+  );
+  const browserConnector = useMemo(
+    () =>
+      connectors.find((connector) => connector.id === "injected") ??
+      connectors.find((connector) => connector.name.toLowerCase().includes("injected")),
+    [connectors],
+  );
+  const activeIsBaseAccount = activeConnector?.name.toLowerCase().includes("base") ?? false;
 
   const signIn = useMutation({
-    mutationFn: async () => {
-      if (!address || !chainId) throw new Error("Connect your Base wallet first.");
-      const { nonce } = await api.nonce(address, "signin");
+    mutationFn: async (input?: SignInInput) => {
+      const controlAddress = input?.address ?? address;
+      const controlChainId = input?.chainId ?? chainId;
+      if (!controlAddress || !controlChainId) throw new Error("Connect your Base wallet first.");
+      const { nonce } = await api.nonce(controlAddress, "signin");
       const message = createSiweMessage({
-        address,
-        chainId,
+        address: controlAddress,
+        chainId: controlChainId,
         domain: window.location.host,
         uri: window.location.origin,
         version: "1",
@@ -88,6 +107,15 @@ export function App() {
       });
       const signature = await signMessageAsync({ message });
       await api.verify(message, signature);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+  });
+
+  const connectBaseAccount = useMutation({
+    mutationFn: async () => {
+      if (!baseAccountConnector) throw new Error("Base Account connector is not available.");
+      const connection = await connectAsync({ connector: baseAccountConnector, chainId: base.id });
+      await signIn.mutateAsync({ address: connection.accounts[0], chainId: connection.chainId });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
   });
@@ -124,7 +152,7 @@ export function App() {
   });
 
   const startMining = useMutation({
-    mutationFn: () => api.startMining(DEFAULT_DAILY_CAP_USDC),
+    mutationFn: api.startMining,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
   });
 
@@ -136,7 +164,7 @@ export function App() {
   const state = dashboard.data;
   const isSignedIn = Boolean(state?.user);
   const wrongChain = isConnected && chainId !== base.id;
-  const signBusy = isSigning || signIn.isPending;
+  const signBusy = isSigning || signIn.isPending || connectBaseAccount.isPending || isConnectingWallet;
 
   return (
     <main className="noise-haze plus-grid crt-both min-h-screen overflow-x-hidden bg-[#060608] text-white">
@@ -188,20 +216,26 @@ export function App() {
         <section className="dashboard grid grid-cols-1 border-b border-[rgba(255,255,255,0.04)] sm:grid-cols-3">
           <Metric coord="01.00" label="Hosted Wallet" value={state?.wallet ? shortAddress(state.wallet.address) : "Not Created"} />
           <Metric coord="01.01" label="Mining Status" value={state?.miningJob?.status ?? "Idle"} />
-          <Metric coord="01.02" label="Daily Cap" value={`$${state?.miningJob?.dailyCapUsdc ?? DEFAULT_DAILY_CAP_USDC}`} />
+          <Metric coord="01.02" label="Compute Route" value="x402 GPU" />
         </section>
 
         {!isConnected && (
           <Panel coord="02.00" label="Connect" title="Connect Base Account" icon={<Wallet size={16} />}>
             {isReconnecting && <p className="mb-4 text-[10px] leading-[1.7] text-[#717886]">Restoring wallet connection...</p>}
-            <div className="grid gap-2 sm:max-w-[360px]">
-              {connectors.map((connector) => (
-                <button className={primaryButton} key={connector.uid} onClick={() => connect({ connector })}>
+            <div className="grid gap-3 sm:max-w-[360px]">
+              <BaseAccountAction busy={signBusy} onClick={() => connectBaseAccount.mutate()} />
+              {browserConnector && (
+                <button className={secondaryButton} onClick={() => connect({ connector: browserConnector, chainId: base.id })} disabled={signBusy}>
                   <Wallet size={14} />
-                  Connect {connector.name}
+                  Use browser wallet
                 </button>
-              ))}
+              )}
+              <p className="text-[9px] font-mono leading-[1.7] text-[#717886]">
+                Base Account is the default for Base App users. Browser wallet fallback is available for desktop testing.
+              </p>
             </div>
+            {connectBaseAccount.error && <ErrorText error={connectBaseAccount.error} />}
+            {connectError && <ErrorText error={connectError} />}
           </Panel>
         )}
 
@@ -219,10 +253,19 @@ export function App() {
             <p className="mb-4 max-w-[520px] text-[10px] leading-[1.7] text-[#4D9FFF]">
               Your Base Account controls app access and funding. It never exposes your main wallet key to APoW.
             </p>
-            <button className={`${primaryButton} sm:max-w-[260px]`} onClick={() => signIn.mutate()} disabled={signBusy}>
-              {signBusy ? <Loader2 className="spin" size={14} /> : <KeyRound size={14} />}
-              Sign in with Base
-            </button>
+            <div className="grid gap-3 sm:max-w-[360px]">
+              {activeIsBaseAccount ? (
+                <BaseAccountAction
+                  busy={signBusy}
+                  onClick={() => address && chainId && signIn.mutate({ address, chainId })}
+                />
+              ) : (
+                <button className={primaryButton} onClick={() => address && chainId && signIn.mutate({ address, chainId })} disabled={signBusy}>
+                  {signBusy ? <Loader2 className="spin" size={14} /> : <KeyRound size={14} />}
+                  Sign in with connected wallet
+                </button>
+              )}
+            </div>
             {signIn.error && <ErrorText error={signIn.error} />}
           </Panel>
         )}
@@ -298,6 +341,14 @@ function Panel(props: {
       </div>
       {props.children}
     </section>
+  );
+}
+
+function BaseAccountAction({ busy, onClick }: { busy: boolean; onClick: () => void }) {
+  return (
+    <div className={`base-account-action ${busy ? "pointer-events-none opacity-60" : ""}`}>
+      <SignInWithBaseButton align="left" variant="solid" colorScheme="dark" onClick={onClick} />
+    </div>
   );
 }
 

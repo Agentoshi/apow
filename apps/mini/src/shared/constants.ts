@@ -16,7 +16,6 @@ export const CONTRACTS = {
 } as const;
 
 export const BASESCAN_BASE_URL = "https://basescan.org";
-export const DEFAULT_DAILY_CAP_USDC = "5.00";
 export const MIN_STARTUP_USDC = "2.00";
 export const MIN_ETH_RESERVE = "0.003";
 export const DEFAULT_DERIVATION_PATH = "m/44'/60'/0'/0/0";

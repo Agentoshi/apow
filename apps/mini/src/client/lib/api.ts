@@ -70,10 +70,9 @@ export const api = {
       body: JSON.stringify({ intentId, txHash }),
     });
   },
-  startMining(dailyCapUsdc: string) {
+  startMining() {
     return request<{ job: NonNullable<DashboardState["miningJob"]> }>("/api/mining/start", {
       method: "POST",
-      body: JSON.stringify({ dailyCapUsdc }),
     });
   },
   pauseMining() {

@@ -72,7 +72,6 @@ CREATE TABLE IF NOT EXISTS mining_jobs (
   user_id TEXT NOT NULL,
   wallet_id TEXT NOT NULL,
   status TEXT NOT NULL,
-  daily_cap_usdc TEXT NOT NULL,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   last_error TEXT,

@@ -85,7 +85,6 @@ export interface MiningJob {
   userId: string;
   walletId: string;
   status: MiningJobStatus;
-  dailyCapUsdc: string;
   createdAt: string;
   updatedAt: string;
   lastError?: string | null;

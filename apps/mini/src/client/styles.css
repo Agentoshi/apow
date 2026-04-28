@@ -189,6 +189,22 @@ p {
   overflow-wrap: anywhere;
 }
 
+.base-account-action {
+  width: 100%;
+}
+
+.base-account-action .-base-ui-sign-in-css-reset .-base-ui-sign-in-button {
+  min-width: 0 !important;
+  height: 48px !important;
+  border-radius: 0 !important;
+  font-family: Geist, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-size: 15px !important;
+}
+
+.base-account-action .-base-ui-sign-in-css-reset .-base-ui-sign-in-button-content {
+  justify-content: center !important;
+}
+
 ::-webkit-scrollbar {
   width: 3px;
 }

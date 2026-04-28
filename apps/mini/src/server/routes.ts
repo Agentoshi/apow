@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { parseUnits } from "viem";
-import { APP_NAME, BASE_CHAIN_ID, BUILDER_CODE, CONTRACTS, DEFAULT_DAILY_CAP_USDC } from "../shared/constants";
+import { APP_NAME, BASE_CHAIN_ID, BUILDER_CODE, CONTRACTS } from "../shared/constants";
 import type { DashboardState, FundingIntent, LedgerEntry, SourceAsset } from "../shared/types";
 import { planAutoSplit } from "../shared/funding";
 import { nowIso, randomId, randomNonce } from "./crypto";
@@ -361,7 +361,6 @@ app.post("/api/funding/direct/confirm", async (c) => {
 });
 
 app.post("/api/mining/start", async (c) => {
-  const body = await c.req.json<{ dailyCapUsdc?: string }>().catch(() => ({} as { dailyCapUsdc?: string }));
   const storage = storageFor(c.env.DB);
   const session = c.get("session");
   const wallet = await storage.getWalletByUser(session.userId);
@@ -375,7 +374,6 @@ app.post("/api/mining/start", async (c) => {
     userId: session.userId,
     walletId: wallet.id,
     status: "active" as const,
-    dailyCapUsdc: body.dailyCapUsdc ?? existing?.dailyCapUsdc ?? DEFAULT_DAILY_CAP_USDC,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
     lastError: null,

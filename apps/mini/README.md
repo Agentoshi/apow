@@ -8,6 +8,7 @@ This app is intentionally separate from `apow-splash` and `apow-cli`. The Base A
 
 - React mobile-first mining console.
 - Tailwind 4 + shadcn styling aligned to `apow-splash`/`apow.io`: dark CRT grid, Base-blue actions, APoW logo, and favicon.
+- Official Base Account UI sign-in button, with wagmi/Base Account connector and a browser-wallet fallback for desktop testing.
 - wagmi + Base Account connector.
 - Builder Code attribution suffix for `bc_6wfeb1kd`.
 - Hono Worker API.
@@ -20,7 +21,7 @@ This app is intentionally separate from `apow-splash` and `apow-cli`. The Base A
 - Base Pay client flow with backend verification via Base USDC transfer receipt.
 - Direct ETH and USDC transfer fallback recording.
 - Solana SOL and Solana USDC Squid deposit-address route creation when `SQUID_INTEGRATOR_ID` is configured.
-- Mining job start and pause controls.
+- Mining job start and pause controls with no daily spend cap.
 
 ## Still Required Before Production
 
