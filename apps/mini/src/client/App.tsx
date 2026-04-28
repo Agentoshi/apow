@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { pay } from "@base-org/account";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDownToLine,
   Bot,
@@ -15,8 +15,8 @@ import {
   Wallet,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { parseEther, parseUnits } from "viem";
 import { createSiweMessage } from "viem/siwe";
-import { base } from "wagmi/chains";
 import {
   useAccount,
   useCapabilities,
@@ -28,14 +28,21 @@ import {
   useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
-import { parseEther, parseUnits } from "viem";
-import { api } from "./lib/api";
-import { generateMiningWallet, type GeneratedMiningWallet } from "./lib/miningWallet";
+import { base } from "wagmi/chains";
 import { BASESCAN_BASE_URL, CONTRACTS, DEFAULT_DAILY_CAP_USDC, erc20Abi } from "../shared/constants";
 import { sourceAssetLabel } from "../shared/funding";
 import type { DashboardState, SourceAsset } from "../shared/types";
+import { api } from "./lib/api";
+import { generateMiningWallet, type GeneratedMiningWallet } from "./lib/miningWallet";
 
 const sourceAssets: SourceAsset[] = ["BASE_USDC", "BASE_ETH", "SOLANA_USDC", "SOLANA_SOL"];
+
+const primaryButton =
+  "inline-flex h-9 w-full items-center justify-center gap-2 bg-[#0052FF] px-4 text-[11px] font-mono uppercase tracking-[0.08em] text-white shadow-[0_0_24px_rgba(0,82,255,0.25)] transition-colors hover:bg-[#0047E0] disabled:cursor-not-allowed disabled:opacity-50";
+const secondaryButton =
+  "inline-flex h-9 w-full items-center justify-center gap-2 border border-[rgba(255,255,255,0.08)] px-4 text-[11px] font-mono uppercase tracking-[0.08em] text-[#4D9FFF] transition-colors hover:border-[rgba(255,255,255,0.15)] hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
+const iconButton =
+  "inline-flex h-9 w-9 flex-none items-center justify-center border border-[rgba(255,255,255,0.08)] text-[#4D9FFF] transition-colors hover:border-[#4D9FFF]/30 hover:bg-[#0052FF]/10 hover:text-white";
 
 function shortAddress(address?: string | null): string {
   if (!address) return "-";
@@ -132,121 +139,174 @@ export function App() {
   const signBusy = isSigning || signIn.isPending;
 
   return (
-    <main className="shell">
-      <section className="topbar">
-        <div>
-          <div className="brand">APoW</div>
-          <h1>Cloud mining console</h1>
-        </div>
-        <div className="wallet-pill">
-          <Wallet size={16} />
-          <span>{isConnected ? shortAddress(address) : "No wallet"}</span>
-        </div>
-      </section>
+    <main className="noise-haze plus-grid crt-both min-h-screen overflow-x-hidden bg-[#060608] text-white">
+      <div className="crt-bloom-overlay" aria-hidden="true" />
 
-      <section className="status-grid">
-        <Metric label="Hosted wallet" value={state?.wallet ? shortAddress(state.wallet.address) : "Not created"} />
-        <Metric label="Mining status" value={state?.miningJob?.status ?? "idle"} />
-        <Metric label="Daily cap" value={`$${state?.miningJob?.dailyCapUsdc ?? DEFAULT_DAILY_CAP_USDC}`} />
-      </section>
-
-      {!isConnected && (
-        <Panel title="Connect Base Account" icon={<Wallet size={18} />}>
-          {isReconnecting && <p className="muted">Restoring wallet connection...</p>}
-          <div className="button-stack">
-            {connectors.map((connector) => (
-              <button className="primary" key={connector.uid} onClick={() => connect({ connector })}>
-                <Wallet size={16} />
-                Connect {connector.name}
-              </button>
-            ))}
+      <div className="border-b border-[rgba(255,255,255,0.04)]">
+        <nav className="mx-auto flex h-11 max-w-[1200px] items-center justify-between px-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <img src="/logo.png?v=2" alt="APoW" className="h-5 w-5" />
+            <span className="text-[13px] font-semibold">APoW</span>
+            <span className="hidden text-[10px] font-mono uppercase tracking-[0.1em] text-[#4D9FFF] sm:inline">
+              Cloud Mining
+            </span>
           </div>
-        </Panel>
-      )}
+          <div className="flex items-center gap-3">
+            <span className="hidden text-[10px] font-mono uppercase tracking-[0.1em] text-[#4D9FFF] sm:inline">
+              Base App
+            </span>
+            <div className="flex h-7 items-center gap-2 border border-[#4D9FFF]/20 px-2 text-[10px] font-mono text-[#4D9FFF]">
+              <Wallet size={13} />
+              <span>{isConnected ? shortAddress(address) : "No wallet"}</span>
+            </div>
+          </div>
+        </nav>
+      </div>
 
-      {isConnected && wrongChain && (
-        <Panel title="Switch to Base" icon={<ShieldCheck size={18} />}>
-          <button className="primary" onClick={() => switchChain({ chainId: base.id })} disabled={isSwitching}>
-            {isSwitching ? <Loader2 className="spin" size={16} /> : <ShieldCheck size={16} />}
-            Switch network
-          </button>
-        </Panel>
-      )}
+      <div className="mx-auto max-w-[1200px] border-x border-[rgba(255,255,255,0.04)]">
+        <section className="relative border-b border-[rgba(255,255,255,0.04)] p-5 pt-8 sm:p-6 sm:pt-8">
+          <Coord value="00.00" />
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-[620px]">
+              <Label>Hosted Agent Console</Label>
+              <h1 className="mt-2 text-[34px] font-extrabold leading-none sm:text-[48px]">
+                Cloud mining <span className="block text-[#0052FF]">for $AGENT</span>
+              </h1>
+              <p className="mt-4 max-w-[520px] text-[12px] leading-[1.7] text-[#717886]">
+                Fund one mining wallet from Base, back up the one-time seed phrase, and run APoW through the same Base-native console style as the protocol site.
+              </p>
+            </div>
+            {isSignedIn && (
+              <button className={`${secondaryButton} w-auto`} onClick={() => logout.mutate()} disabled={logout.isPending}>
+                <Power size={14} />
+                Sign out
+              </button>
+            )}
+          </div>
+        </section>
 
-      {isConnected && !wrongChain && !isSignedIn && (
-        <Panel title="Sign in" icon={<KeyRound size={18} />}>
-          <p className="muted">Your Base Account controls the hosted mining wallet. It never exposes your main wallet key.</p>
-          <button className="primary" onClick={() => signIn.mutate()} disabled={signBusy}>
-            {signBusy ? <Loader2 className="spin" size={16} /> : <KeyRound size={16} />}
-            Sign in with Base
-          </button>
-          {signIn.error && <ErrorText error={signIn.error} />}
-        </Panel>
-      )}
+        <section className="dashboard grid grid-cols-1 border-b border-[rgba(255,255,255,0.04)] sm:grid-cols-3">
+          <Metric coord="01.00" label="Hosted Wallet" value={state?.wallet ? shortAddress(state.wallet.address) : "Not Created"} />
+          <Metric coord="01.01" label="Mining Status" value={state?.miningJob?.status ?? "Idle"} />
+          <Metric coord="01.02" label="Daily Cap" value={`$${state?.miningJob?.dailyCapUsdc ?? DEFAULT_DAILY_CAP_USDC}`} />
+        </section>
 
-      {isSignedIn && !state?.wallet && pendingWalletBackup && (
-        <SeedBackupPanel
-          generated={pendingWalletBackup}
-          confirm={() => confirmWalletBackup.mutate()}
-          busy={confirmWalletBackup.isPending}
-        />
-      )}
+        {!isConnected && (
+          <Panel coord="02.00" label="Connect" title="Connect Base Account" icon={<Wallet size={16} />}>
+            {isReconnecting && <p className="mb-4 text-[10px] leading-[1.7] text-[#717886]">Restoring wallet connection...</p>}
+            <div className="grid gap-2 sm:max-w-[360px]">
+              {connectors.map((connector) => (
+                <button className={primaryButton} key={connector.uid} onClick={() => connect({ connector })}>
+                  <Wallet size={14} />
+                  Connect {connector.name}
+                </button>
+              ))}
+            </div>
+          </Panel>
+        )}
 
-      {isSignedIn && !state?.wallet && !pendingWalletBackup && (
-        <Panel title="Create hosted mining wallet" icon={<Bot size={18} />}>
-          <p className="muted">
-            APoW uses one dedicated mining EOA per Base Account because the live contracts reject smart-wallet callers. This wallet can own multiple rigs, but only one rig can mine at a time.
-          </p>
-          <button className="primary" onClick={() => createWallet.mutate()} disabled={createWallet.isPending}>
-            {createWallet.isPending ? <Loader2 className="spin" size={16} /> : <Bot size={16} />}
-            Create agent wallet
-          </button>
-          {createWallet.error && <ErrorText error={createWallet.error} />}
-        </Panel>
-      )}
+        {isConnected && wrongChain && (
+          <Panel coord="02.00" label="Network" title="Switch to Base" icon={<ShieldCheck size={16} />}>
+            <button className={`${primaryButton} sm:max-w-[260px]`} onClick={() => switchChain({ chainId: base.id })} disabled={isSwitching}>
+              {isSwitching ? <Loader2 className="spin" size={14} /> : <ShieldCheck size={14} />}
+              Switch network
+            </button>
+          </Panel>
+        )}
 
-      {isSignedIn && state?.wallet && (
-        <div className="main-grid">
-          <MiningPanel
-            state={state}
-            supportsBatching={supportsBatching}
-            startMining={() => startMining.mutate()}
-            pauseMining={() => pauseMining.mutate()}
-            busy={startMining.isPending || pauseMining.isPending}
+        {isConnected && !wrongChain && !isSignedIn && (
+          <Panel coord="02.00" label="Authenticate" title="Sign in" icon={<KeyRound size={16} />}>
+            <p className="mb-4 max-w-[520px] text-[10px] leading-[1.7] text-[#4D9FFF]">
+              Your Base Account controls app access and funding. It never exposes your main wallet key to APoW.
+            </p>
+            <button className={`${primaryButton} sm:max-w-[260px]`} onClick={() => signIn.mutate()} disabled={signBusy}>
+              {signBusy ? <Loader2 className="spin" size={14} /> : <KeyRound size={14} />}
+              Sign in with Base
+            </button>
+            {signIn.error && <ErrorText error={signIn.error} />}
+          </Panel>
+        )}
+
+        {isSignedIn && !state?.wallet && pendingWalletBackup && (
+          <SeedBackupPanel
+            generated={pendingWalletBackup}
+            confirm={() => confirmWalletBackup.mutate()}
+            busy={confirmWalletBackup.isPending}
+            error={confirmWalletBackup.error}
           />
-          <FundingPanel state={state} />
-          <WalletPanel state={state} />
-          <ActivityPanel state={state} />
-        </div>
-      )}
+        )}
 
-      {isSignedIn && (
-        <button className="ghost logout" onClick={() => logout.mutate()} disabled={logout.isPending}>
-          <Power size={16} />
-          Sign out
-        </button>
-      )}
+        {isSignedIn && !state?.wallet && !pendingWalletBackup && (
+          <Panel coord="02.00" label="Mining Wallet" title="Create agent wallet" icon={<Bot size={16} />}>
+            <p className="mb-4 max-w-[620px] text-[10px] leading-[1.7] text-[#4D9FFF]">
+              APoW uses one dedicated mining EOA per Base Account because the live contracts reject smart-wallet callers. This wallet can own multiple rigs, but only one rig can mine at a time.
+            </p>
+            <button className={`${primaryButton} sm:max-w-[280px]`} onClick={() => createWallet.mutate()} disabled={createWallet.isPending}>
+              {createWallet.isPending ? <Loader2 className="spin" size={14} /> : <Bot size={14} />}
+              Create agent wallet
+            </button>
+            {createWallet.error && <ErrorText error={createWallet.error} />}
+          </Panel>
+        )}
+
+        {isSignedIn && state?.wallet && (
+          <>
+            <div className="grid grid-cols-1 border-b border-[rgba(255,255,255,0.04)] lg:grid-cols-12">
+              <MiningPanel
+                state={state}
+                supportsBatching={supportsBatching}
+                startMining={() => startMining.mutate()}
+                pauseMining={() => pauseMining.mutate()}
+                busy={startMining.isPending || pauseMining.isPending}
+              />
+              <FundingPanel state={state} />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-12">
+              <WalletPanel state={state} />
+              <ActivityPanel state={state} />
+            </div>
+          </>
+        )}
+      </div>
     </main>
   );
 }
 
-function Panel(props: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+function Label({ children }: { children: React.ReactNode }) {
+  return <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#4D9FFF]">{children}</span>;
+}
+
+function Coord({ value }: { value: string }) {
+  return <span className="absolute right-3 top-2 select-none text-[9px] font-mono text-[#4D9FFF]">{value}</span>;
+}
+
+function Panel(props: {
+  coord: string;
+  label: string;
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <section className="panel">
-      <div className="panel-title">
-        {props.icon}
-        <h2>{props.title}</h2>
+    <section className={`relative min-w-0 border-b border-[rgba(255,255,255,0.04)] p-5 pt-8 sm:p-6 sm:pt-8 ${props.className ?? ""}`}>
+      <Coord value={props.coord} />
+      <Label>{props.label}</Label>
+      <div className="mb-4 mt-2 flex items-center gap-2">
+        <span className="text-[#4D9FFF]">{props.icon}</span>
+        <h2 className="text-[18px] font-bold">{props.title}</h2>
       </div>
       {props.children}
     </section>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({ coord, label, value }: { coord: string; label: string; value: string }) {
   return (
-    <div className="metric">
-      <span>{label}</span>
-      <strong>{value}</strong>
+    <div className="relative min-h-[104px] p-5 pt-8">
+      <Coord value={coord} />
+      <p className="mb-1 overflow-wrap-anywhere font-mono text-[30px] font-bold leading-none">{value}</p>
+      <Label>{label}</Label>
     </div>
   );
 }
@@ -260,26 +320,31 @@ function MiningPanel(props: {
 }) {
   const active = props.state.miningJob?.status === "active";
   return (
-    <Panel title="Mine" icon={<Pickaxe size={18} />}>
-      <div className="rig-box">
-        <Bot size={28} />
-        <div>
-          <strong>Hosted APoW agent</strong>
-          <span>{props.state.wallet?.address}</span>
+    <Panel coord="02.00" label="Mine" title="Hosted APoW agent" icon={<Pickaxe size={16} />} className="lg:col-span-7 lg:border-r">
+      <div className="mb-4 border border-[#0052FF]/[0.08] bg-[#0052FF]/[0.03] p-4">
+        <div className="mb-2 flex items-center gap-2">
+          <span className="h-1.5 w-1.5 bg-[#0052FF] shadow-[0_0_6px_#0052FF]" />
+          <span className="text-[11px] font-mono font-medium uppercase tracking-[0.1em]">Mining wallet</span>
         </div>
+        <p className="break-all font-mono text-[11px] leading-[1.7] text-[#4D9FFF]">{props.state.wallet?.address}</p>
       </div>
-      <div className="rule-box">
-        <strong>Rig rule</strong>
-        <span>
+
+      <div className="mb-4 border border-[#4D9FFF]/[0.12] bg-[rgba(255,255,255,0.015)] p-4">
+        <div className="mb-2 flex items-center gap-2">
+          <Bot size={14} className="text-[#4D9FFF]" />
+          <span className="text-[11px] font-mono font-medium uppercase tracking-[0.1em]">Rig rule</span>
+        </div>
+        <p className="text-[10px] leading-[1.7] text-[#4D9FFF]">
           You may mint multiple mining rigs into this wallet, but APoW mines with exactly one active rig. The app defaults to the rig with the best hashpower multiplier.
-        </span>
+        </p>
       </div>
-      <div className="capability">
-        <ShieldCheck size={16} />
+
+      <p className="mb-4 flex items-center gap-2 text-[10px] leading-[1.7] text-[#717886]">
+        <ShieldCheck size={14} className="text-[#4D9FFF]" />
         {props.supportsBatching ? "Base Account batching available for funding UX" : "Single-transaction fallback active"}
-      </div>
-      <button className={active ? "secondary" : "primary"} onClick={active ? props.pauseMining : props.startMining} disabled={props.busy}>
-        {props.busy ? <Loader2 className="spin" size={16} /> : active ? <CirclePause size={16} /> : <Play size={16} />}
+      </p>
+      <button className={active ? secondaryButton : primaryButton} onClick={active ? props.pauseMining : props.startMining} disabled={props.busy}>
+        {props.busy ? <Loader2 className="spin" size={14} /> : active ? <CirclePause size={14} /> : <Play size={14} />}
         {active ? "Pause mining" : "Start mining"}
       </button>
     </Panel>
@@ -334,34 +399,49 @@ function FundingPanel({ state }: { state: DashboardState }) {
   });
 
   return (
-    <Panel title="Add budget" icon={<ArrowDownToLine size={18} />}>
-      <div className="segmented">
+    <Panel coord="02.01" label="Funding" title="Add mining budget" icon={<ArrowDownToLine size={16} />} className="lg:col-span-5">
+      <div className="mb-4 grid grid-cols-2 gap-px border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.06)]">
         {sourceAssets.map((asset) => (
-          <button key={asset} className={sourceAsset === asset ? "selected" : ""} onClick={() => setSourceAsset(asset)}>
+          <button
+            key={asset}
+            className={`min-h-10 px-2 text-[10px] font-mono uppercase tracking-[0.08em] transition-colors ${
+              sourceAsset === asset ? "bg-[#0052FF] text-white" : "bg-[#0A0B0D] text-[#4D9FFF] hover:text-white"
+            }`}
+            onClick={() => setSourceAsset(asset)}
+          >
             {sourceAssetLabel(asset)}
           </button>
         ))}
       </div>
-      <label className="field">
-        <span>Amount</span>
-        <input value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="decimal" />
+      <label className="mb-4 grid gap-1">
+        <span className="text-[9px] font-mono uppercase tracking-[0.15em] text-[#4D9FFF]">Amount</span>
+        <input
+          className="h-10 border border-[rgba(255,255,255,0.08)] bg-[rgba(0,0,0,0.35)] px-3 font-mono text-[12px] text-white outline-none transition-colors focus:border-[#0052FF]"
+          value={amount}
+          onChange={(event) => setAmount(event.target.value)}
+          inputMode="decimal"
+        />
       </label>
-      <button className="primary" onClick={() => createIntent.mutate()} disabled={createIntent.isPending || waitEth.isLoading || waitUsdc.isLoading}>
-        {createIntent.isPending ? <Loader2 className="spin" size={16} /> : <ArrowDownToLine size={16} />}
+      <button className={primaryButton} onClick={() => createIntent.mutate()} disabled={createIntent.isPending || waitEth.isLoading || waitUsdc.isLoading}>
+        {createIntent.isPending ? <Loader2 className="spin" size={14} /> : <ArrowDownToLine size={14} />}
         {sourceAsset === "BASE_USDC" ? "Pay with Base Pay" : sourceAsset === "BASE_ETH" ? "Deposit ETH" : "Create Solana route"}
       </button>
       {sourceAsset === "BASE_USDC" && (
-        <button className="ghost" onClick={() => directUsdc.mutate()} disabled={directUsdc.isPending}>
-          <ArrowDownToLine size={16} />
+        <button className={`${secondaryButton} mt-2`} onClick={() => directUsdc.mutate()} disabled={directUsdc.isPending}>
+          <ArrowDownToLine size={14} />
           Direct USDC transfer
         </button>
       )}
       {sourceAsset.startsWith("SOLANA") && (
-        <p className="muted">The API records the Solana route request now; bridge quoting is the next wired backend step.</p>
+        <p className="mt-4 text-[10px] leading-[1.7] text-[#717886]">
+          The API records the Solana route request now; bridge quoting is the next wired backend step.
+        </p>
       )}
       {createIntent.error && <ErrorText error={createIntent.error} />}
       {directUsdc.error && <ErrorText error={directUsdc.error} />}
-      <p className="muted">Deposit target: {state.wallet?.address}</p>
+      <p className="mt-4 break-all text-[9px] font-mono leading-[1.7] text-[#4D9FFF]">
+        Deposit target: {state.wallet?.address}
+      </p>
     </Panel>
   );
 }
@@ -370,30 +450,28 @@ function SeedBackupPanel(props: {
   generated: GeneratedMiningWallet;
   confirm: () => void;
   busy: boolean;
+  error: unknown;
 }) {
   return (
-    <section className="panel seed-panel">
-      <div className="panel-title">
-        <KeyRound size={18} />
-        <h2>Back up seed phrase</h2>
-      </div>
-      <p className="warning">
+    <Panel coord="02.00" label="Custody" title="Back up seed phrase" icon={<KeyRound size={16} />}>
+      <p className="mb-4 max-w-[720px] text-[10px] leading-[1.7] text-[#4D9FFF]">
         This is shown once. APoW does not store this seed phrase or private key. If it is lost, APoW cannot export or recover this mining wallet.
       </p>
-      <div className="seed-grid">
+      <div className="mb-4 grid grid-cols-2 gap-px border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.06)] sm:grid-cols-3 md:grid-cols-4">
         {props.generated.mnemonic.split(" ").map((word, index) => (
-          <div className="seed-word" key={`${word}-${index}`}>
-            <span>{index + 1}</span>
-            <strong>{word}</strong>
+          <div className="min-h-12 bg-[#0A0B0D] p-3" key={`${word}-${index}`}>
+            <span className="mr-2 font-mono text-[9px] text-[#4D9FFF]">{String(index + 1).padStart(2, "0")}</span>
+            <strong className="font-mono text-[12px] font-medium text-white">{word}</strong>
           </div>
         ))}
       </div>
-      <p className="muted">Wallet: {props.generated.address}</p>
-      <button className="primary" onClick={props.confirm} disabled={props.busy}>
-        {props.busy ? <Loader2 className="spin" size={16} /> : <ShieldCheck size={16} />}
+      <p className="mb-4 break-all text-[9px] font-mono leading-[1.7] text-[#717886]">Wallet: {props.generated.address}</p>
+      <button className={`${primaryButton} sm:max-w-[220px]`} onClick={props.confirm} disabled={props.busy}>
+        {props.busy ? <Loader2 className="spin" size={14} /> : <ShieldCheck size={14} />}
         I backed it up
       </button>
-    </section>
+      {Boolean(props.error) && <ErrorText error={props.error} />}
+    </Panel>
   );
 }
 
@@ -404,22 +482,26 @@ function WalletPanel({ state }: { state: DashboardState }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
   });
   return (
-    <Panel title="Agent wallet" icon={<Wallet size={18} />}>
-      <div className="address-row">
-        <span>{state.wallet?.address}</span>
-        <button className="icon" onClick={() => navigator.clipboard.writeText(state.wallet?.address ?? "")} aria-label="Copy hosted wallet address">
-          <Copy size={16} />
+    <Panel coord="03.00" label="Agent Wallet" title="Mining EOA" icon={<Wallet size={16} />} className="lg:col-span-5 lg:border-r">
+      <div className="mb-4 flex items-stretch gap-2">
+        <span className="min-w-0 flex-1 break-all border border-[rgba(255,255,255,0.08)] bg-[rgba(0,0,0,0.35)] p-3 font-mono text-[10px] leading-[1.7] text-[#4D9FFF]">
+          {state.wallet?.address}
+        </span>
+        <button className={iconButton} onClick={() => navigator.clipboard.writeText(state.wallet?.address ?? "")} aria-label="Copy hosted wallet address" title="Copy">
+          <Copy size={14} />
         </button>
-        <a className="icon" href={`${BASESCAN_BASE_URL}/address/${state.wallet?.address}`} target="_blank" rel="noreferrer" aria-label="Open hosted wallet on Basescan">
-          <ExternalLink size={16} />
+        <a className={iconButton} href={`${BASESCAN_BASE_URL}/address/${state.wallet?.address}`} target="_blank" rel="noreferrer" aria-label="Open hosted wallet on Basescan" title="Open on Basescan">
+          <ExternalLink size={14} />
         </a>
       </div>
-      <p className="muted">One hosted mining wallet is allowed per signed-in Base Account.</p>
-      <button className="secondary" onClick={() => pauseWallet.mutate()} disabled={pauseWallet.isPending}>
-        {state.wallet?.paused ? <Play size={16} /> : <CirclePause size={16} />}
+      <p className="mb-4 text-[10px] leading-[1.7] text-[#4D9FFF]">One hosted mining wallet is allowed per signed-in Base Account.</p>
+      <button className={secondaryButton} onClick={() => pauseWallet.mutate()} disabled={pauseWallet.isPending}>
+        {state.wallet?.paused ? <Play size={14} /> : <CirclePause size={14} />}
         {state.wallet?.paused ? "Resume wallet" : "Pause wallet"}
       </button>
-      <p className="muted">APoW does not store this wallet's seed phrase or private key. Back up the phrase shown at creation or this wallet cannot be exported or recovered.</p>
+      <p className="mt-4 text-[9px] font-mono leading-[1.7] text-[#717886]">
+        APoW does not store this wallet's seed phrase or private key. Back up the phrase shown at creation or this wallet cannot be exported or recovered.
+      </p>
     </Panel>
   );
 }
@@ -427,18 +509,22 @@ function WalletPanel({ state }: { state: DashboardState }) {
 function ActivityPanel({ state }: { state: DashboardState }) {
   const items = state.ledger.slice(0, 8);
   return (
-    <Panel title="Activity" icon={<ShieldCheck size={18} />}>
+    <Panel coord="03.01" label="Ledger" title="Activity" icon={<ShieldCheck size={16} />} className="lg:col-span-7">
       {items.length === 0 ? (
-        <p className="muted">Deposits, swaps, x402 costs, gas, minting, and mining events will appear here.</p>
+        <p className="text-[10px] leading-[1.7] text-[#717886]">Deposits, swaps, x402 costs, gas, minting, and mining events will appear here.</p>
       ) : (
-        <div className="activity-list">
+        <div className="grid gap-px border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.06)]">
           {items.map((entry) => (
-            <div className="activity" key={entry.id}>
-              <div>
-                <strong>{entry.description}</strong>
-                <span>{entry.category} · {entry.status}</span>
+            <div className="grid gap-2 bg-[#0A0B0D] p-3 sm:grid-cols-[1fr_auto]" key={entry.id}>
+              <div className="min-w-0">
+                <strong className="block text-[11px] font-medium">{entry.description}</strong>
+                <span className="font-mono text-[9px] uppercase tracking-[0.1em] text-[#4D9FFF]">
+                  {entry.category} / {entry.status}
+                </span>
               </div>
-              <span>{entry.amount} {entry.asset}</span>
+              <span className="font-mono text-[10px] text-[#4D9FFF]">
+                {entry.amount} {entry.asset}
+              </span>
             </div>
           ))}
         </div>
@@ -448,5 +534,5 @@ function ActivityPanel({ state }: { state: DashboardState }) {
 }
 
 function ErrorText({ error }: { error: unknown }) {
-  return <p className="error">{error instanceof Error ? error.message : "Something failed"}</p>;
+  return <p className="mt-3 text-[10px] font-mono leading-[1.7] text-[#FC401F]">{error instanceof Error ? error.message : "Something failed"}</p>;
 }

@@ -7,6 +7,7 @@ This app is intentionally separate from `apow-splash` and `apow-cli`. The Base A
 ## What Works
 
 - React mobile-first mining console.
+- Tailwind 4 + shadcn styling aligned to `apow-splash`/`apow.io`: dark CRT grid, Base-blue actions, APoW logo, and favicon.
 - wagmi + Base Account connector.
 - Builder Code attribution suffix for `bc_6wfeb1kd`.
 - Hono Worker API.
