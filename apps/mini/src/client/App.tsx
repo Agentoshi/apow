@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDownToLine,
   Bot,
+  Brain,
   CirclePause,
   Copy,
   ExternalLink,
@@ -13,6 +14,7 @@ import {
   Play,
   Power,
   ShieldCheck,
+  Sparkles,
   Wallet,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -37,6 +39,7 @@ import { api } from "./lib/api";
 import { generateMiningWallet, type GeneratedMiningWallet } from "./lib/miningWallet";
 
 const sourceAssets: SourceAsset[] = ["BASE_USDC", "BASE_ETH", "SOLANA_USDC", "SOLANA_SOL"];
+const clawRouterModel = "free LLM";
 
 const primaryButton =
   "inline-flex h-9 w-full items-center justify-center gap-2 bg-[#0052FF] px-4 text-[11px] font-mono uppercase tracking-[0.08em] text-white shadow-[0_0_24px_rgba(0,82,255,0.25)] transition-colors hover:bg-[#0047E0] disabled:cursor-not-allowed disabled:opacity-50";
@@ -176,7 +179,7 @@ export function App() {
             <img src="/logo.png?v=2" alt="APoW" className="h-5 w-5" />
             <span className="text-[13px] font-semibold">APoW</span>
             <span className="hidden text-[10px] font-mono uppercase tracking-[0.1em] text-[#4D9FFF] sm:inline">
-              Cloud Mining
+              Cloud Mining Agent
             </span>
           </div>
           <div className="flex items-center gap-3">
@@ -196,12 +199,12 @@ export function App() {
           <Coord value="00.00" />
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-[620px]">
-              <Label>Hosted Agent Console</Label>
+              <Label>Cloud Mining Agent</Label>
               <h1 className="mt-2 text-[34px] font-extrabold leading-none sm:text-[48px]">
-                Cloud mining <span className="block text-[#0052FF]">for $AGENT</span>
+                Deploy cloud <span className="block text-[#0052FF]">mining agent</span>
               </h1>
               <p className="mt-4 max-w-[520px] text-[12px] leading-[1.7] text-[#717886]">
-                Fund one mining wallet from Base, back up the one-time seed phrase, and run APoW through the same Base-native console style as the protocol site.
+                Fund one agent wallet from Base, back up the one-time seed phrase, and let a hosted APoW agent operate ClawRouter, x402 GPU grinding, and your strongest rig.
               </p>
             </div>
             {isSignedIn && (
@@ -214,9 +217,9 @@ export function App() {
         </section>
 
         <section className="dashboard grid grid-cols-1 border-b border-[rgba(255,255,255,0.04)] sm:grid-cols-3">
-          <Metric coord="01.00" label="Hosted Wallet" value={state?.wallet ? shortAddress(state.wallet.address) : "Not Created"} />
-          <Metric coord="01.01" label="Mining Status" value={state?.miningJob?.status ?? "Idle"} />
-          <Metric coord="01.02" label="Compute Route" value="x402 GPU" />
+          <Metric coord="01.00" label="Agent Brain" value="ClawRouter" />
+          <Metric coord="01.01" label="Agent Status" value={state?.miningJob?.status ?? "Idle"} />
+          <Metric coord="01.02" label="Agent Wallet" value={state?.wallet ? shortAddress(state.wallet.address) : "Not Created"} />
         </section>
 
         {!isConnected && (
@@ -280,9 +283,9 @@ export function App() {
         )}
 
         {isSignedIn && !state?.wallet && !pendingWalletBackup && (
-          <Panel coord="02.00" label="Mining Wallet" title="Create agent wallet" icon={<Bot size={16} />}>
+          <Panel coord="02.00" label="Agent Wallet" title="Create cloud mining agent wallet" icon={<Bot size={16} />}>
             <p className="mb-4 max-w-[620px] text-[10px] leading-[1.7] text-[#4D9FFF]">
-              APoW uses one dedicated mining EOA per Base Account because the live contracts reject smart-wallet callers. This wallet can own multiple rigs, but only one rig can mine at a time.
+              The Cloud Mining Agent uses one dedicated EOA because APoW contracts reject smart-wallet callers. This wallet can own multiple rig-agents, but only one rig-agent can mine at a time.
             </p>
             <button className={`${primaryButton} sm:max-w-[280px]`} onClick={() => createWallet.mutate()} disabled={createWallet.isPending}>
               {createWallet.isPending ? <Loader2 className="spin" size={14} /> : <Bot size={14} />}
@@ -303,6 +306,10 @@ export function App() {
                 busy={startMining.isPending || pauseMining.isPending}
               />
               <FundingPanel state={state} />
+            </div>
+            <div className="grid grid-cols-1 border-b border-[rgba(255,255,255,0.04)] lg:grid-cols-12">
+              <AgentBrainPanel />
+              <AgentToolsPanel state={state} />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-12">
               <WalletPanel state={state} />
@@ -371,22 +378,22 @@ function MiningPanel(props: {
 }) {
   const active = props.state.miningJob?.status === "active";
   return (
-    <Panel coord="02.00" label="Mine" title="Hosted APoW agent" icon={<Pickaxe size={16} />} className="lg:col-span-7 lg:border-r">
+    <Panel coord="02.00" label="Cloud Mining Agent" title="Agent Control" icon={<Pickaxe size={16} />} className="lg:col-span-7 lg:border-r">
       <div className="mb-4 border border-[#0052FF]/[0.08] bg-[#0052FF]/[0.03] p-4">
         <div className="mb-2 flex items-center gap-2">
           <span className="h-1.5 w-1.5 bg-[#0052FF] shadow-[0_0_6px_#0052FF]" />
-          <span className="text-[11px] font-mono font-medium uppercase tracking-[0.1em]">Mining wallet</span>
+          <span className="text-[11px] font-mono font-medium uppercase tracking-[0.1em]">Agent wallet</span>
         </div>
         <p className="break-all font-mono text-[11px] leading-[1.7] text-[#4D9FFF]">{props.state.wallet?.address}</p>
       </div>
 
       <div className="mb-4 border border-[#4D9FFF]/[0.12] bg-[rgba(255,255,255,0.015)] p-4">
         <div className="mb-2 flex items-center gap-2">
-          <Bot size={14} className="text-[#4D9FFF]" />
-          <span className="text-[11px] font-mono font-medium uppercase tracking-[0.1em]">Rig rule</span>
+          <Sparkles size={14} className="text-[#4D9FFF]" />
+          <span className="text-[11px] font-mono font-medium uppercase tracking-[0.1em]">Active rig-agent rule</span>
         </div>
         <p className="text-[10px] leading-[1.7] text-[#4D9FFF]">
-          You may mint multiple mining rigs into this wallet, but APoW mines with exactly one active rig. The app defaults to the rig with the best hashpower multiplier.
+          You may own multiple rig-agents, but the Cloud Mining Agent can deploy exactly one active rig-agent. It defaults to the strongest hashpower multiplier in the wallet.
         </p>
       </div>
 
@@ -396,9 +403,49 @@ function MiningPanel(props: {
       </p>
       <button className={active ? secondaryButton : primaryButton} onClick={active ? props.pauseMining : props.startMining} disabled={props.busy}>
         {props.busy ? <Loader2 className="spin" size={14} /> : active ? <CirclePause size={14} /> : <Play size={14} />}
-        {active ? "Pause mining" : "Start mining"}
+        {active ? "Pause agent" : "Deploy cloud mining agent"}
       </button>
     </Panel>
+  );
+}
+
+function AgentBrainPanel() {
+  return (
+    <Panel coord="03.00" label="Agent Brain" title="BlockRun ClawRouter" icon={<Brain size={16} />} className="lg:col-span-7 lg:border-r">
+      <div className="mb-4 grid gap-px border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.06)] sm:grid-cols-3">
+        <AgentDatum label="LLM Router" value="ClawRouter" />
+        <AgentDatum label="Default Model" value={clawRouterModel} />
+        <AgentDatum label="Payment Rail" value="x402 USDC" />
+      </div>
+      <p className="mb-4 text-[10px] leading-[1.7] text-[#4D9FFF]">
+        ClawRouter is the Cloud Mining Agent brain: it routes LLM calls with wallet-signature auth, defaults to the free model path, and can pay x402 when paid reasoning is needed.
+      </p>
+      <p className="text-[9px] font-mono leading-[1.7] text-[#717886]">
+        The LLM plans and explains agent actions. SMHL mining proofs and nonce grinding remain deterministic tool work handled by APoW and x402 GPU routes.
+      </p>
+    </Panel>
+  );
+}
+
+function AgentToolsPanel({ state }: { state: DashboardState }) {
+  return (
+    <Panel coord="03.01" label="Agent Tools" title="Execution Stack" icon={<Bot size={16} />} className="lg:col-span-5">
+      <div className="grid gap-px border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.06)]">
+        <AgentDatum label="Operating Wallet" value={state.wallet ? shortAddress(state.wallet.address) : "Not Created"} />
+        <AgentDatum label="GPU Grinder" value="x402 GrindProxy" />
+        <AgentDatum label="Base RPC" value="x402 / Base" />
+        <AgentDatum label="Rig Policy" value="Strongest Only" />
+      </div>
+    </Panel>
+  );
+}
+
+function AgentDatum({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 bg-[#0A0B0D] p-3">
+      <span className="block font-mono text-[9px] uppercase tracking-[0.12em] text-[#4D9FFF]">{label}</span>
+      <strong className="mt-1 block overflow-wrap-anywhere text-[12px] font-medium text-white">{value}</strong>
+    </div>
   );
 }
 
@@ -450,7 +497,7 @@ function FundingPanel({ state }: { state: DashboardState }) {
   });
 
   return (
-    <Panel coord="02.01" label="Funding" title="Add mining budget" icon={<ArrowDownToLine size={16} />} className="lg:col-span-5">
+    <Panel coord="02.01" label="Funding" title="Fund agent tools" icon={<ArrowDownToLine size={16} />} className="lg:col-span-5">
       <div className="mb-4 grid grid-cols-2 gap-px border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.06)]">
         {sourceAssets.map((asset) => (
           <button
@@ -491,7 +538,7 @@ function FundingPanel({ state }: { state: DashboardState }) {
       {createIntent.error && <ErrorText error={createIntent.error} />}
       {directUsdc.error && <ErrorText error={directUsdc.error} />}
       <p className="mt-4 break-all text-[9px] font-mono leading-[1.7] text-[#4D9FFF]">
-        Deposit target: {state.wallet?.address}
+        Agent wallet deposit target: {state.wallet?.address}
       </p>
     </Panel>
   );
@@ -533,7 +580,7 @@ function WalletPanel({ state }: { state: DashboardState }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
   });
   return (
-    <Panel coord="03.00" label="Agent Wallet" title="Mining EOA" icon={<Wallet size={16} />} className="lg:col-span-5 lg:border-r">
+    <Panel coord="04.00" label="Agent Wallet" title="Mining EOA" icon={<Wallet size={16} />} className="lg:col-span-5 lg:border-r">
       <div className="mb-4 flex items-stretch gap-2">
         <span className="min-w-0 flex-1 break-all border border-[rgba(255,255,255,0.08)] bg-[rgba(0,0,0,0.35)] p-3 font-mono text-[10px] leading-[1.7] text-[#4D9FFF]">
           {state.wallet?.address}
@@ -545,7 +592,7 @@ function WalletPanel({ state }: { state: DashboardState }) {
           <ExternalLink size={14} />
         </a>
       </div>
-      <p className="mb-4 text-[10px] leading-[1.7] text-[#4D9FFF]">One hosted mining wallet is allowed per signed-in Base Account.</p>
+      <p className="mb-4 text-[10px] leading-[1.7] text-[#4D9FFF]">One Cloud Mining Agent wallet is allowed per signed-in Base Account.</p>
       <button className={secondaryButton} onClick={() => pauseWallet.mutate()} disabled={pauseWallet.isPending}>
         {state.wallet?.paused ? <Play size={14} /> : <CirclePause size={14} />}
         {state.wallet?.paused ? "Resume wallet" : "Pause wallet"}
@@ -559,10 +606,22 @@ function WalletPanel({ state }: { state: DashboardState }) {
 
 function ActivityPanel({ state }: { state: DashboardState }) {
   const items = state.ledger.slice(0, 8);
+  const active = state.miningJob?.status === "active";
   return (
-    <Panel coord="03.01" label="Ledger" title="Activity" icon={<ShieldCheck size={16} />} className="lg:col-span-7">
+    <Panel coord="04.01" label="Agent Log" title="Agent Activity" icon={<ShieldCheck size={16} />} className="lg:col-span-7">
       {items.length === 0 ? (
-        <p className="text-[10px] leading-[1.7] text-[#717886]">Deposits, swaps, x402 costs, gas, minting, and mining events will appear here.</p>
+        <div className="grid gap-px border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.06)]">
+          {[
+            "ClawRouter brain ready on free LLM route",
+            state.wallet ? "Agent wallet registered and awaiting funding" : "Waiting for agent wallet creation",
+            active ? "Cloud Mining Agent deployed" : "Deploy agent to begin x402 GPU workflow",
+          ].map((line, index) => (
+            <div className="bg-[#0A0B0D] p-3" key={line}>
+              <span className="font-mono text-[9px] uppercase tracking-[0.1em] text-[#4D9FFF]">{String(index + 1).padStart(2, "0")} / agent</span>
+              <strong className="mt-1 block text-[11px] font-medium">{line}</strong>
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="grid gap-px border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.06)]">
           {items.map((entry) => (

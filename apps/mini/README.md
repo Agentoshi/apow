@@ -1,12 +1,12 @@
 # APoW Mini
 
-Base App compatible cloud mining console for APoW.
+Base App compatible Cloud Mining Agent console for APoW.
 
 This app is intentionally separate from `apow-splash` and `apow-cli`. The Base Account is the user's sign-in and funding wallet. A hosted APoW EOA is created for mining because the immutable APoW contracts reject contract callers for `mint()` and `mine()`.
 
 ## What Works
 
-- React mobile-first mining console.
+- React mobile-first Cloud Mining Agent console.
 - Tailwind 4 + shadcn styling aligned to `apow-splash`/`apow.io`: dark CRT grid, Base-blue actions, APoW logo, and favicon.
 - Official Base Account UI sign-in button, with wagmi/Base Account connector and a browser-wallet fallback for desktop testing.
 - wagmi + Base Account connector.
@@ -21,7 +21,8 @@ This app is intentionally separate from `apow-splash` and `apow-cli`. The Base A
 - Base Pay client flow with backend verification via Base USDC transfer receipt.
 - Direct ETH and USDC transfer fallback recording.
 - Solana SOL and Solana USDC Squid deposit-address route creation when `SQUID_INTEGRATOR_ID` is configured.
-- Mining job start and pause controls with no daily spend cap.
+- Cloud Mining Agent deploy and pause controls with no daily spend cap.
+- Agent brain/tooling UI for BlockRun ClawRouter, free LLM default, x402 GPU grinding, x402 RPC, and active rig-agent policy.
 
 ## Still Required Before Production
 

@@ -388,7 +388,7 @@ app.post("/api/mining/start", async (c) => {
     amount: "0",
     status: "confirmed",
     txHash: null,
-    description: "Cloud mining job activated. Runner will use x402 GPU grinding by default.",
+    description: "Cloud Mining Agent deployed. ClawRouter handles the LLM brain and x402 GPU grinding is the default execution route.",
     createdAt: now,
   });
   return c.json({ job });
