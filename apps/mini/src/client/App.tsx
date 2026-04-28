@@ -204,7 +204,7 @@ export function App() {
                 Deploy cloud <span className="block text-[#0052FF]">mining agent</span>
               </h1>
               <p className="mt-4 max-w-[520px] text-[12px] leading-[1.7] text-[#717886]">
-                Fund one agent wallet from Base, back up the one-time seed phrase, and let a hosted APoW agent operate ClawRouter, x402 GPU grinding, and your strongest rig.
+                Fund one agent wallet from Base, back up the one-time seed phrase, and let a hosted APoW agent operate ClawRouter, x402 GPU grinding, and your strongest rig. No need to download any software to your device.
               </p>
             </div>
             {isSignedIn && (

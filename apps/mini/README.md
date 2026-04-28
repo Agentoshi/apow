@@ -1,6 +1,6 @@
 # APoW Mini
 
-Base App compatible Cloud Mining Agent console for APoW.
+Base App compatible Cloud Mining Agent console for APoW. No need to download any software to your device.
 
 This app is intentionally separate from `apow-splash` and `apow-cli`. The Base Account is the user's sign-in and funding wallet. A hosted APoW EOA is created for mining because the immutable APoW contracts reject contract callers for `mint()` and `mine()`.
 
