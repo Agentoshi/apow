@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
-import { parseUnits } from "viem";
+import { isHash, parseUnits } from "viem";
 import { APP_NAME, BASE_CHAIN_ID, BUILDER_CODE, CONTRACTS } from "../shared/constants";
-import type { DashboardState, FundingIntent, LedgerEntry, SourceAsset } from "../shared/types";
+import type { DashboardState, FundingIntent, LedgerCategory, LedgerEntry, SourceAsset } from "../shared/types";
 import { planAutoSplit } from "../shared/funding";
 import { nowIso, randomId, randomNonce } from "./crypto";
 import type { Env } from "./env";
@@ -24,6 +24,11 @@ import { getSquidDepositAddress } from "./squid";
 const SESSION_COOKIE = "apow_session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const NONCE_TTL_MS = 1000 * 60 * 10;
+const DEFAULT_GRIND_URL = "https://grind.apow.io/grind";
+const RPC_TIMEOUT_MS = 20_000;
+const GRIND_TIMEOUT_MS = 90_000;
+const PRICE_TIMEOUT_MS = 8_000;
+const LEDGER_CATEGORIES: readonly LedgerCategory[] = ["swap", "x402-rpc", "x402-llm", "x402-grind", "mint", "mine", "system"];
 
 interface AppVars {
   session: Session;
@@ -31,9 +36,46 @@ interface AppVars {
 
 export const app = new Hono<{ Bindings: Env; Variables: AppVars }>();
 type AppContext = Context<{ Bindings: Env; Variables: AppVars }>;
+type MiningEventRequest = {
+  category?: LedgerCategory;
+  asset?: LedgerEntry["asset"];
+  amount?: string;
+  status?: LedgerEntry["status"];
+  txHash?: `0x${string}` | null;
+  description?: string;
+  jobStatus?: "active" | "paused" | "error";
+  lastError?: string | null;
+};
 
 function jsonError(message: string, status = 400) {
   return Response.json({ error: message }, { status });
+}
+
+function filterProxyResponseHeaders(response: Response): Headers {
+  const headers = new Headers();
+  for (const name of [
+    "content-type",
+    "payment-required",
+    "payment-response",
+    "x-payment-response",
+    "access-control-expose-headers",
+  ]) {
+    const value = response.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+  if (response.status === 402) {
+    headers.set("access-control-expose-headers", "PAYMENT-REQUIRED,PAYMENT-RESPONSE,X-PAYMENT-RESPONSE");
+  }
+  return headers;
+}
+
+function proxyError(error: unknown, label: string): Response {
+  const message = error instanceof Error ? error.message : String(error);
+  return jsonError(`${label} failed: ${message}`, 502);
+}
+
+function isAllowedLedgerCategory(value: unknown): value is LedgerCategory {
+  return typeof value === "string" && LEDGER_CATEGORIES.includes(value as LedgerCategory);
 }
 
 async function recordAutoSplitPlan(input: {
@@ -388,7 +430,7 @@ app.post("/api/mining/start", async (c) => {
     amount: "0",
     status: "confirmed",
     txHash: null,
-    description: "Cloud Mining Agent deployed. ClawRouter handles the LLM brain and x402 GPU grinding is the default execution route.",
+    description: "Cloud Mining Agent session started. Browser-held mining key signs transactions; x402 GPU grinding is the default nonce route.",
     createdAt: now,
   });
   return c.json({ job });
@@ -413,6 +455,137 @@ app.post("/api/x402/sign", async (c) => {
     },
     410,
   );
+});
+
+app.get("/api/prices/eth-usd", async (c) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PRICE_TIMEOUT_MS);
+  try {
+    const upstream = await fetch("https://api.coinbase.com/v2/prices/ETH-USD/spot", {
+      headers: { accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!upstream.ok) return c.json({ error: `ETH price lookup failed: ${upstream.status}` }, 502);
+    const payload = (await upstream.json()) as { data?: { amount?: string } };
+    const ethUsd = Number(payload.data?.amount);
+    if (!Number.isFinite(ethUsd) || ethUsd <= 0) {
+      return c.json({ error: "ETH price lookup returned an invalid amount" }, 502);
+    }
+    return c.json({ ethUsd, source: "coinbase" });
+  } catch (error) {
+    return proxyError(error, "ETH price lookup");
+  } finally {
+    clearTimeout(timer);
+  }
+});
+
+app.post("/api/rpc", async (c) => {
+  if (!c.env.BASE_RPC_URL) return c.json({ error: "BASE_RPC_URL is not configured" }, 500);
+  const body = await c.req.text();
+  if (!body) return c.json({ error: "JSON-RPC body is required" }, 400);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), RPC_TIMEOUT_MS);
+  try {
+    const upstream = await fetch(c.env.BASE_RPC_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body,
+      signal: controller.signal,
+    });
+    return new Response(await upstream.arrayBuffer(), {
+      status: upstream.status,
+      headers: filterProxyResponseHeaders(upstream),
+    });
+  } catch (error) {
+    return proxyError(error, "RPC proxy");
+  } finally {
+    clearTimeout(timer);
+  }
+});
+
+app.post("/api/grind", async (c) => {
+  const wallet = await storageFor(c.env.DB).getWalletByUser(c.get("session").userId);
+  if (!wallet) return c.json({ error: "Create hosted mining wallet first" }, 409);
+  if (!wallet.backupConfirmedAt) return c.json({ error: "Back up the mining wallet seed phrase before mining." }, 409);
+  if (wallet.paused) return c.json({ error: "Wallet is paused" }, 409);
+
+  const body = await c.req.text();
+  if (!body) return c.json({ error: "Grind payload is required" }, 400);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), GRIND_TIMEOUT_MS);
+  const headers = new Headers({ "content-type": "application/json" });
+  for (const name of ["payment-signature", "x-payment", "authorization", "access-control-expose-headers"]) {
+    const value = c.req.header(name);
+    if (value) headers.set(name, value);
+  }
+
+  try {
+    const upstream = await fetch(c.env.GRIND_URL ?? DEFAULT_GRIND_URL, {
+      method: "POST",
+      headers,
+      body,
+      signal: controller.signal,
+    });
+    return new Response(await upstream.arrayBuffer(), {
+      status: upstream.status,
+      headers: filterProxyResponseHeaders(upstream),
+    });
+  } catch (error) {
+    return proxyError(error, "GrindProxy");
+  } finally {
+    clearTimeout(timer);
+  }
+});
+
+app.post("/api/mining/events", async (c) => {
+  const body = await c.req
+    .json<MiningEventRequest>()
+    .catch(() => ({} as MiningEventRequest));
+  if (!isAllowedLedgerCategory(body.category)) return c.json({ error: "Unsupported mining event category" }, 400);
+  if (!["ETH", "USDC", "AGENT", "SOL", "SYSTEM"].includes(body.asset ?? "")) {
+    return c.json({ error: "Unsupported mining event asset" }, 400);
+  }
+  if (!["pending", "confirmed", "failed"].includes(body.status ?? "")) {
+    return c.json({ error: "Unsupported mining event status" }, 400);
+  }
+  if (body.txHash && !isHash(body.txHash)) return c.json({ error: "Invalid transaction hash" }, 400);
+  const description = typeof body.description === "string" ? body.description.trim().slice(0, 240) : "";
+  if (!description) return c.json({ error: "Mining event description is required" }, 400);
+
+  const storage = storageFor(c.env.DB);
+  const session = c.get("session");
+  const wallet = await storage.getWalletByUser(session.userId);
+  if (!wallet) return c.json({ error: "Create hosted mining wallet first" }, 409);
+  if (!wallet.backupConfirmedAt) return c.json({ error: "Back up the mining wallet seed phrase before mining." }, 409);
+  const entry: LedgerEntry = {
+    id: randomId("ledger"),
+    userId: session.userId,
+    walletId: wallet.id,
+    category: body.category,
+    asset: body.asset as LedgerEntry["asset"],
+    amount: body.amount ?? "0",
+    status: body.status as LedgerEntry["status"],
+    txHash: body.txHash ?? null,
+    description,
+    createdAt: nowIso(),
+  };
+  await storage.addLedgerEntry(entry);
+
+  if (body.jobStatus) {
+    const existing = await storage.getMiningJob(session.userId);
+    const now = nowIso();
+    await storage.upsertMiningJob({
+      id: existing?.id ?? randomId("mine"),
+      userId: session.userId,
+      walletId: wallet.id,
+      status: body.jobStatus,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+      lastError: body.lastError ?? null,
+    });
+  }
+
+  return c.json({ ledgerEntry: entry });
 });
 
 app.get("/api/parse/usdc/:amount", (c) => {

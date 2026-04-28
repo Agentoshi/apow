@@ -21,17 +21,17 @@ This app is intentionally separate from `apow-splash` and `apow-cli`. The Base A
 - Base Pay client flow with backend verification via Base USDC transfer receipt.
 - Direct ETH and USDC transfer fallback recording.
 - Solana SOL and Solana USDC Squid deposit-address route creation when `SQUID_INTEGRATOR_ID` is configured.
-- Cloud Mining Agent deploy and pause controls with no daily spend cap.
-- Agent brain/tooling UI for the `blockrun/eco` LLM routing profile, x402 GPU grinding, x402 RPC, and active rig-agent policy.
+- One-deposit startup flow: the unlocked mining wallet can auto-split Base ETH/USDC through Uniswap V3 into ETH for minting/gas and USDC for x402 GPU spend.
+- Browser-held Cloud Mining Agent session: unlock with the backed-up seed phrase, detect owned rigs, select the highest-hashpower rig, mint a rig if needed, request x402 GPU grinding, submit APoW `mine()` transactions, and record safe ledger events.
+- Cloud Mining Agent deploy and pause controls with no daily spend cap. The tab must stay open because APoW does not store the mining wallet seed phrase or private key.
+- Agent brain/tooling UI for the `blockrun/eco` LLM routing profile, x402 GPU grinding, APoW RPC proxy, and active rig-agent policy.
 
 ## Still Required Before Production
 
 - Apply `migrations/0001_init.sql` to the bound D1 database.
 - Set production secret: `SESSION_SECRET`.
 - Set `SQUID_INTEGRATOR_ID` before enabling Solana funding routes.
-- Wire auto-split swap execution on Base.
-- Port rig minting from `apow-cli/src/mint.ts`.
-- Port the mining runner from `apow-cli/src/miner.ts` and x402 GrindProxy calls from `apow-cli/src/grinder-http.ts` with a non-custodial signer/session-key design.
+- Replace the current `BASE_RPC_URL` production var with a dedicated/private Base RPC before sustained live mining. The public Base endpoint is not appropriate for production mining traffic.
 - Run Base App Developer Mode Preview from a public HTTPS URL.
 
 ## Local Commands

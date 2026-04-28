@@ -17,7 +17,7 @@ import {
   Sparkles,
   Wallet,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { parseEther, parseUnits } from "viem";
 import { createSiweMessage } from "viem/siwe";
 import {
@@ -34,8 +34,16 @@ import {
 import { base } from "wagmi/chains";
 import { BASESCAN_BASE_URL, CONTRACTS, erc20Abi } from "../shared/constants";
 import { sourceAssetLabel } from "../shared/funding";
-import type { DashboardState, SourceAsset } from "../shared/types";
+import type { DashboardState, FundingIntent, SourceAsset } from "../shared/types";
 import { api } from "./lib/api";
+import {
+  createCloudMinerSession,
+  formatBalances,
+  formatHashpower,
+  type CloudMinerEvent,
+  type CloudMinerSession,
+  type CloudMinerSnapshot,
+} from "./lib/cloudMiner";
 import { generateMiningWallet, type GeneratedMiningWallet } from "./lib/miningWallet";
 
 const sourceAssets: SourceAsset[] = ["BASE_USDC", "BASE_ETH", "SOLANA_USDC", "SOLANA_SOL"];
@@ -44,6 +52,8 @@ const primaryButton =
   "inline-flex h-9 w-full items-center justify-center gap-2 bg-[#0052FF] px-4 text-[11px] font-mono uppercase tracking-[0.08em] text-white shadow-[0_0_24px_rgba(0,82,255,0.25)] transition-colors hover:bg-[#0047E0] disabled:cursor-not-allowed disabled:opacity-50";
 const secondaryButton =
   "inline-flex h-9 w-full items-center justify-center gap-2 border border-[rgba(255,255,255,0.08)] px-4 text-[11px] font-mono uppercase tracking-[0.08em] text-[#4D9FFF] transition-colors hover:border-[rgba(255,255,255,0.15)] hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
+const compactSecondaryButton =
+  "inline-flex h-9 items-center justify-center gap-2 border border-[rgba(255,255,255,0.08)] px-4 text-[11px] font-mono uppercase tracking-[0.08em] text-[#4D9FFF] transition-colors hover:border-[rgba(255,255,255,0.15)] hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 const iconButton =
   "inline-flex h-9 w-9 flex-none items-center justify-center border border-[rgba(255,255,255,0.08)] text-[#4D9FFF] transition-colors hover:border-[#4D9FFF]/30 hover:bg-[#0052FF]/10 hover:text-white";
 
@@ -153,16 +163,6 @@ export function App() {
     },
   });
 
-  const startMining = useMutation({
-    mutationFn: api.startMining,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
-  });
-
-  const pauseMining = useMutation({
-    mutationFn: api.pauseMining,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
-  });
-
   const state = dashboard.data;
   const isSignedIn = Boolean(state?.user);
   const wrongChain = isConnected && chainId !== base.id;
@@ -209,7 +209,7 @@ export function App() {
               </p>
             </div>
             {isSignedIn && (
-              <button className={`${secondaryButton} w-auto`} onClick={() => logout.mutate()} disabled={logout.isPending}>
+              <button className={compactSecondaryButton} onClick={() => logout.mutate()} disabled={logout.isPending}>
                 <Power size={14} />
                 Sign out
               </button>
@@ -227,7 +227,7 @@ export function App() {
           />
         </section>
 
-        {!isConnected && (
+        {!isSignedIn && !isConnected && (
           <Panel coord="02.00" label="Connect" title="Connect Base Account" icon={<Wallet size={16} />}>
             {isReconnecting && (
               <p className="mb-4 text-[10px] leading-[1.7] text-[#717886]">Restoring wallet connection...</p>
@@ -254,7 +254,7 @@ export function App() {
           </Panel>
         )}
 
-        {isConnected && wrongChain && (
+        {!isSignedIn && isConnected && wrongChain && (
           <Panel coord="02.00" label="Network" title="Switch to Base" icon={<ShieldCheck size={16} />}>
             <button
               className={`${primaryButton} sm:max-w-[260px]`}
@@ -267,7 +267,7 @@ export function App() {
           </Panel>
         )}
 
-        {isConnected && !wrongChain && !isSignedIn && (
+        {!isSignedIn && isConnected && !wrongChain && (
           <Panel coord="02.00" label="Authenticate" title="Sign in" icon={<KeyRound size={16} />}>
             <p className="mb-4 max-w-[520px] text-[10px] leading-[1.7] text-[#4D9FFF]">
               Your Base Account controls app access and funding. It never exposes your main wallet key to APoW.
@@ -331,9 +331,6 @@ export function App() {
               <MiningPanel
                 state={state}
                 supportsBatching={supportsBatching}
-                startMining={() => startMining.mutate()}
-                pauseMining={() => pauseMining.mutate()}
-                busy={startMining.isPending || pauseMining.isPending}
               />
               <FundingPanel state={state} />
             </div>
@@ -406,11 +403,103 @@ function Metric({ coord, label, value }: { coord: string; label: string; value: 
 function MiningPanel(props: {
   state: DashboardState;
   supportsBatching: boolean;
-  startMining: () => void;
-  pauseMining: () => void;
-  busy: boolean;
 }) {
-  const active = props.state.miningJob?.status === "active";
+  const queryClient = useQueryClient();
+  const abortRef = useRef<AbortController | null>(null);
+  const [seedPhrase, setSeedPhrase] = useState("");
+  const [session, setSession] = useState<CloudMinerSession | null>(null);
+  const [snapshot, setSnapshot] = useState<CloudMinerSnapshot | null>(null);
+  const [logs, setLogs] = useState<CloudMinerEvent[]>([]);
+  const [running, setRunning] = useState(false);
+
+  const addLog = (event: CloudMinerEvent) => {
+    setLogs((current) => [{ ...event }, ...current].slice(0, 12));
+  };
+
+  const walletAddress = props.state.wallet?.address;
+  const active = running || props.state.miningJob?.status === "active";
+  const balances = snapshot ? formatBalances(snapshot.balances) : null;
+
+  const unlock = useMutation({
+    mutationFn: async () => {
+      if (!walletAddress) throw new Error("Create the Cloud Mining Agent wallet first.");
+      const next = createCloudMinerSession({
+        mnemonic: seedPhrase,
+        expectedAddress: walletAddress,
+        onEvent: addLog,
+      });
+      const nextSnapshot = await next.refresh();
+      setSession(next);
+      setSnapshot(nextSnapshot);
+      setSeedPhrase("");
+      addLog({ level: "success", message: "Mining wallet unlocked locally. Seed phrase cleared from the form." });
+      return nextSnapshot;
+    },
+  });
+
+  const refreshMiner = useMutation({
+    mutationFn: async () => {
+      if (!session) throw new Error("Unlock the mining wallet seed phrase first.");
+      const nextSnapshot = await session.refresh();
+      setSnapshot(nextSnapshot);
+      return nextSnapshot;
+    },
+  });
+
+  const mintRig = useMutation({
+    mutationFn: async () => {
+      if (!session) throw new Error("Unlock the mining wallet seed phrase first.");
+      const rig = await session.mintRig();
+      setSnapshot(await session.refresh());
+      return rig;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+  });
+
+  const mineOnce = useMutation({
+    mutationFn: async () => {
+      if (!session) throw new Error("Unlock the mining wallet seed phrase first.");
+      const hash = await session.mineOnce();
+      setSnapshot(await session.refresh());
+      return hash;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+  });
+
+  const runMiner = useMutation({
+    mutationFn: async () => {
+      if (!session) throw new Error("Unlock the mining wallet seed phrase first.");
+      const controller = new AbortController();
+      abortRef.current = controller;
+      setRunning(true);
+      await session.run(controller.signal);
+    },
+    onSettled: async () => {
+      abortRef.current = null;
+      setRunning(false);
+      if (session) {
+        setSnapshot(await session.refresh().catch(() => snapshot));
+      }
+      await queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+
+  const pauseAgent = async () => {
+    abortRef.current?.abort();
+    setRunning(false);
+    try {
+      await api.pauseMining();
+      addLog({ level: "info", message: "Cloud Mining Agent session paused." });
+    } catch (error) {
+      addLog({ level: "warning", message: error instanceof Error ? error.message : "Pause request failed." });
+    }
+    await queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+  };
+
+  const busy =
+    unlock.isPending || refreshMiner.isPending || mintRig.isPending || mineOnce.isPending || runMiner.isPending;
+  const panelError = unlock.error ?? refreshMiner.error ?? mintRig.error ?? mineOnce.error ?? runMiner.error;
+
   return (
     <Panel
       coord="02.00"
@@ -438,20 +527,149 @@ function MiningPanel(props: {
         </p>
       </div>
 
+      {!session ? (
+        <div className="mb-4 grid gap-3 border border-[#4D9FFF]/[0.12] bg-[rgba(255,255,255,0.015)] p-4">
+          <div>
+            <span className="text-[11px] font-mono font-medium uppercase tracking-[0.1em] text-white">
+              Unlock local signer
+            </span>
+            <p className="mt-2 text-[10px] leading-[1.7] text-[#717886]">
+              Paste the one-time seed phrase you backed up. It stays in this browser tab, derives the registered mining
+              wallet locally, and is cleared from the form after unlock. APoW never receives it.
+            </p>
+          </div>
+          <textarea
+            className="min-h-24 resize-y border border-[rgba(255,255,255,0.08)] bg-[rgba(0,0,0,0.35)] p-3 font-mono text-[12px] leading-[1.7] text-white outline-none transition-colors focus:border-[#0052FF]"
+            value={seedPhrase}
+            onChange={(event) => setSeedPhrase(event.target.value)}
+            placeholder="seed phrase"
+            spellCheck={false}
+            autoComplete="off"
+            autoCapitalize="none"
+          />
+          <button className={primaryButton} onClick={() => unlock.mutate()} disabled={busy || !seedPhrase.trim()}>
+            {unlock.isPending ? <Loader2 className="spin" size={14} /> : <KeyRound size={14} />}
+            Unlock mining wallet
+          </button>
+        </div>
+      ) : (
+        <div className="mb-4 grid gap-4">
+          <div className="grid gap-px border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.06)] sm:grid-cols-3">
+            <AgentDatum label="ETH Gas" value={balances ? `${balances.eth} ETH` : "Loading"} />
+            <AgentDatum label="x402 Budget" value={balances ? `${balances.usdc} USDC` : "Loading"} />
+            <AgentDatum
+              label="Active Rig"
+              value={
+                snapshot?.activeRig
+                  ? `#${snapshot.activeRig.tokenId.toString()} ${formatHashpower(snapshot.activeRig.hashpower)}`
+                  : "None minted"
+              }
+            />
+          </div>
+
+          {snapshot?.rigs.length ? (
+            <div className="grid gap-px border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.06)]">
+              {snapshot.rigs.map((rig) => (
+                <div
+                  key={rig.tokenId.toString()}
+                  className={`grid gap-2 bg-[#0A0B0D] p-3 sm:grid-cols-[1fr_auto] ${
+                    rig.tokenId === snapshot.activeRig?.tokenId ? "outline outline-1 outline-[#0052FF]/50" : ""
+                  }`}
+                >
+                  <div>
+                    <strong className="block text-[11px] font-medium">Rig-agent #{rig.tokenId.toString()}</strong>
+                    <span className="font-mono text-[9px] uppercase tracking-[0.1em] text-[#4D9FFF]">
+                      {rig.rarityLabel} / selectable inventory
+                    </span>
+                  </div>
+                  <span className="font-mono text-[10px] text-[#4D9FFF]">{formatHashpower(rig.hashpower)}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[10px] leading-[1.7] text-[#717886]">
+              No rig-agent detected. The agent will mint one before mining if the wallet has enough ETH or enough USDC
+              to auto-split into ETH.
+            </p>
+          )}
+
+          <div className="grid gap-2 sm:grid-cols-2">
+            <button className={secondaryButton} onClick={() => refreshMiner.mutate()} disabled={busy}>
+              {refreshMiner.isPending ? <Loader2 className="spin" size={14} /> : <ShieldCheck size={14} />}
+              Refresh agent state
+            </button>
+            <button className={secondaryButton} onClick={() => mintRig.mutate()} disabled={busy}>
+              {mintRig.isPending ? <Loader2 className="spin" size={14} /> : <Sparkles size={14} />}
+              Mint rig-agent
+            </button>
+            <button className={secondaryButton} onClick={() => mineOnce.mutate()} disabled={busy || running}>
+              {mineOnce.isPending ? <Loader2 className="spin" size={14} /> : <Pickaxe size={14} />}
+              Mine one block
+            </button>
+            <button
+              className={active ? secondaryButton : primaryButton}
+              onClick={active ? pauseAgent : () => runMiner.mutate()}
+              disabled={busy && !running}
+            >
+              {runMiner.isPending ? (
+                <Loader2 className="spin" size={14} />
+              ) : active ? (
+                <CirclePause size={14} />
+              ) : (
+                <Play size={14} />
+              )}
+              {active ? "Pause agent" : "Deploy cloud mining agent"}
+            </button>
+          </div>
+        </div>
+      )}
+
       <p className="mb-4 flex items-center gap-2 text-[10px] leading-[1.7] text-[#717886]">
         <ShieldCheck size={14} className="text-[#4D9FFF]" />
         {props.supportsBatching
           ? "Base Account batching available for funding UX"
           : "Single-transaction fallback active"}
       </p>
-      <button
-        className={active ? secondaryButton : primaryButton}
-        onClick={active ? props.pauseMining : props.startMining}
-        disabled={props.busy}
-      >
-        {props.busy ? <Loader2 className="spin" size={14} /> : active ? <CirclePause size={14} /> : <Play size={14} />}
-        {active ? "Pause agent" : "Deploy cloud mining agent"}
-      </button>
+
+      {active && (
+        <p className="mb-4 text-[10px] leading-[1.7] text-[#4D9FFF]">
+          Session active. Keep this tab open so the browser-held mining wallet can sign x402 payments and Base
+          transactions. APoW hosts the RPC and GPU grinding routes, not your private key.
+        </p>
+      )}
+
+      {logs.length > 0 && (
+        <div className="grid gap-px border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.06)]">
+          {logs.map((entry, index) => (
+            <div className="bg-[#0A0B0D] p-3" key={`${entry.message}-${index}`}>
+              <span
+                className={`font-mono text-[9px] uppercase tracking-[0.1em] ${
+                  entry.level === "error"
+                    ? "text-[#FC401F]"
+                    : entry.level === "warning"
+                    ? "text-[#F8B84E]"
+                    : "text-[#4D9FFF]"
+                }`}
+              >
+                {entry.level} / cloud agent
+              </span>
+              <strong className="mt-1 block overflow-wrap-anywhere text-[11px] font-medium">{entry.message}</strong>
+              {entry.txHash && (
+                <a
+                  href={`${BASESCAN_BASE_URL}/tx/${entry.txHash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-1 block break-all font-mono text-[9px] text-[#4D9FFF] hover:text-white"
+                >
+                  {entry.txHash}
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {panelError && <ErrorText error={panelError} />}
     </Panel>
   );
 }
@@ -466,8 +684,8 @@ function AgentBrainPanel() {
       className="lg:col-span-7 lg:border-r"
     >
       <div className="mb-4 grid gap-px border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.06)] sm:grid-cols-3">
-        <AgentDatum label="LLM Provider" value="clawrouter" />
-        <AgentDatum label="LLM Model" value="blockrun/eco" />
+        <AgentDatum label="LLM Route" value="blockrun/eco" />
+        <AgentDatum label="Simple Model" value="free/gpt-oss-120b" />
         <AgentDatum label="Payment Rail" value="x402 USDC" />
       </div>
       <p className="mb-4 text-[10px] leading-[1.7] text-[#4D9FFF]">
@@ -492,7 +710,7 @@ function AgentToolsPanel({ state }: { state: DashboardState }) {
           value={state.wallet ? shortAddress(state.wallet.address) : "Not Created"}
         />
         <AgentDatum label="GPU Grinder" value="x402 GrindProxy" />
-        <AgentDatum label="Base RPC" value="x402 / Base" />
+        <AgentDatum label="Base RPC" value="APoW RPC proxy" />
         <AgentDatum label="Rig Policy" value="Strongest Only" />
       </div>
     </Panel>
@@ -511,7 +729,8 @@ function AgentDatum({ label, value }: { label: string; value: string }) {
 function FundingPanel({ state }: { state: DashboardState }) {
   const queryClient = useQueryClient();
   const [sourceAsset, setSourceAsset] = useState<SourceAsset>("BASE_USDC");
-  const [amount, setAmount] = useState("10.00");
+  const [amount, setAmount] = useState("25.00");
+  const [latestIntent, setLatestIntent] = useState<FundingIntent | null>(null);
   const { sendTransactionAsync, data: ethHash } = useSendTransaction();
   const { writeContractAsync, data: usdcHash } = useWriteContract();
   const waitEth = useWaitForTransactionReceipt({ hash: ethHash });
@@ -537,7 +756,10 @@ function FundingPanel({ state }: { state: DashboardState }) {
       }
       return intent;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+    onSuccess: (intent) => {
+      setLatestIntent(intent);
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
   });
 
   const directUsdc = useMutation({
@@ -605,9 +827,38 @@ function FundingPanel({ state }: { state: DashboardState }) {
       )}
       {sourceAsset.startsWith("SOLANA") && (
         <p className="mt-4 text-[10px] leading-[1.7] text-[#717886]">
-          The API records the Solana route request now; bridge quoting is the next wired backend step.
+          Solana routes use Squid deposit addresses. Send only the selected asset to the returned address before it
+          expires.
         </p>
       )}
+      {latestIntent?.sourceAsset.startsWith("SOLANA") && (
+        <div className="mt-4 border border-[#4D9FFF]/[0.12] bg-[rgba(255,255,255,0.015)] p-4">
+          <span className="block text-[9px] font-mono uppercase tracking-[0.15em] text-[#4D9FFF]">
+            Solana deposit address
+          </span>
+          <div className="mt-2 flex items-stretch gap-2">
+            <span className="min-w-0 flex-1 break-all border border-[rgba(255,255,255,0.08)] bg-[rgba(0,0,0,0.35)] p-3 font-mono text-[10px] leading-[1.7] text-white">
+              {latestIntent.depositAddress}
+            </span>
+            <button
+              className={iconButton}
+              onClick={() => navigator.clipboard.writeText(latestIntent.depositAddress)}
+              aria-label="Copy Solana deposit address"
+              title="Copy"
+            >
+              <Copy size={14} />
+            </button>
+          </div>
+          <p className="mt-3 text-[9px] font-mono leading-[1.7] text-[#717886]">
+            Expected on Base: {latestIntent.expectedReceive ?? "unknown"} / expires{" "}
+            {latestIntent.expiresAt ? new Date(latestIntent.expiresAt).toLocaleString() : "when Squid route closes"}
+          </p>
+        </div>
+      )}
+      <p className="mt-4 text-[10px] leading-[1.7] text-[#717886]">
+        One deposit is enough when the amount covers both sides. The unlocked mining wallet auto-splits on Base into ETH
+        for minting/gas and USDC for x402 GPU spend before it starts mining.
+      </p>
       {createIntent.error && <ErrorText error={createIntent.error} />}
       {directUsdc.error && <ErrorText error={directUsdc.error} />}
       <p className="mt-4 break-all text-[9px] font-mono leading-[1.7] text-[#4D9FFF]">

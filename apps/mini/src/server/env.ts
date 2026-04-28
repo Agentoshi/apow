@@ -4,6 +4,7 @@ export interface Env {
   ENVIRONMENT?: string;
   SESSION_SECRET?: string;
   BASE_RPC_URL?: string;
+  GRIND_URL?: string;
   BASE_CHAIN_ID?: string;
   BASE_PAY_TESTNET?: string;
   ENABLE_LIVE_BASE_PAY_VERIFICATION?: string;

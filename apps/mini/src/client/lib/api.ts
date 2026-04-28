@@ -1,4 +1,4 @@
-import type { DashboardState, FundingIntent, SourceAsset } from "../../shared/types";
+import type { DashboardState, FundingIntent, LedgerCategory, LedgerEntry, SourceAsset } from "../../shared/types";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
@@ -77,5 +77,23 @@ export const api = {
   },
   pauseMining() {
     return request<{ job: NonNullable<DashboardState["miningJob"]> }>("/api/mining/pause", { method: "POST" });
+  },
+  ethUsd() {
+    return request<{ ethUsd: number; source: string }>("/api/prices/eth-usd");
+  },
+  recordMiningEvent(event: {
+    category: LedgerCategory;
+    asset: LedgerEntry["asset"];
+    amount: string;
+    status: LedgerEntry["status"];
+    txHash?: `0x${string}` | null;
+    description: string;
+    jobStatus?: "active" | "paused" | "error";
+    lastError?: string | null;
+  }) {
+    return request<{ ledgerEntry: LedgerEntry }>("/api/mining/events", {
+      method: "POST",
+      body: JSON.stringify(event),
+    });
   },
 };
