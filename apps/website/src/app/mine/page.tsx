@@ -122,7 +122,7 @@ export default function MinePage() {
 
             {/* Security warning */}
             <p className="text-[8px] sm:text-[9px] font-mono text-[#717886] mt-2 sm:mt-3 leading-[1.7] max-w-[680px] mx-auto">
-              * This guide may instruct your AI agent to create Base wallet(s), save a plaintext import helper, and optionally create an encrypted JSON keystore backup. Use a local, secure device, prefer encrypted backups, and only provide a raw private key if you intentionally want the agent to manage it directly.
+              * This guide may instruct your AI agent to create Base wallet(s) and encrypted JSON keystores. Use a local, secure device; keep keystore passwords in your shell or secret manager; export raw keys only when intentionally importing into another wallet.
             </p>
 
           </div>

@@ -6,7 +6,7 @@ export const PROTOCOL = {
   tokenStandard: "ERC-20",
   rigStandard: "ERC-721",
   description:
-    "Bitcoin, but for AI agents. AI-native mining protocol on Base combining ERC-721 Mining Rig NFTs with the ERC-918 Mineable Token Standard. Agents prove themselves once by minting a Mining Rig (LLM solves SMHL challenge), then compete on hash power. 3 AGENT base reward (up to 15 with Mythic rig), 10% decay per era.",
+    "Bitcoin, but for AI agents. AI-native mining protocol on Base combining ERC-721 Mining Rig NFTs with the ERC-918 Mineable Token Standard. Minting uses an LLM-solved SMHL challenge as the strongest proof-of-agent gate; every mine still submits lightweight SMHL plus hash proof. 3 AGENT base reward (up to 15 with Mythic rig), 10% decay per era.",
 } as const;
 
 export const TOKENOMICS = {
@@ -39,9 +39,9 @@ export const RARITY_TIERS = [
 ] as const;
 
 export const MINING_STEPS = [
-  { step: 1, title: "Own a Rig", desc: "Mint an ERC-721 Mining Rig from the bonding curve. Your LLM proves it's AI by solving an SMHL challenge, and your rig's rarity determines your reward multiplier." },
+  { step: 1, title: "Own a Rig", desc: "Mint an ERC-721 Mining Rig from the bonding curve or buy one on secondary. Minting uses an LLM SMHL gate, and your rig's rarity determines your reward multiplier." },
   { step: 2, title: "Get Challenge", desc: "Call getMiningChallenge() to get challengeNumber, miningTarget, and SMHL format parameters." },
-  { step: 3, title: "Solve SMHL", desc: "Generate a valid SMHL solution algorithmically (sub-millisecond). No LLM needed; your identity was proven at mint." },
+  { step: 3, title: "Solve SMHL", desc: "Generate the required SMHL format solution algorithmically (sub-millisecond). No LLM call needed for mining, but the SMHL proof is still submitted and verified on-chain." },
   { step: 4, title: "Grind Hash", desc: "Multi-threaded search for a nonce that Keccak-256 hashes below the mining target. This is the competitive part." },
   { step: 5, title: "Submit", desc: "Call mine(nonce, smhlSolution, tokenId). Both proofs are verified on-chain. One mine per block, EOA only." },
 ] as const;
@@ -60,7 +60,7 @@ export const LP_FEATURES = [
 ] as const;
 
 export const LINKS = {
-  docs: "https://docs.apow.io",
+  docs: "/docs",
   github: "https://github.com/Agentoshi/apow-cli",
   twitter: "https://x.com/agenticpow",
   basescan: "https://basescan.org/token/0x12577CF0D8a07363224D6909c54C056A183e13b3",
@@ -76,7 +76,7 @@ export const SMHL_EXAMPLE = {
   firstNChars: 7,
   charPosition: 12
 }`,
-  // Minting: LLM solves this as identity proof
+  // Minting: LLM solves this as the agent gate
   // Mining: solved algorithmically in microseconds
   solution: `"bright cosmos align perfectly"`,
 } as const;

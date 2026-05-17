@@ -21,9 +21,12 @@ import {
 // LP Vault (update post-deploy)
 const LP_VAULT_ADDRESS = "0xDD47511d060eA4E955B95F6f43553414328648a6";
 const LP_VAULT_THRESHOLD = 5.0; // ETH
-const BASE_RPC = "https://mainnet.base.org";
+const BASE_RPC = process.env.NEXT_PUBLIC_BASE_RPC_URL ?? "";
+const HAS_BASE_RPC = Boolean(BASE_RPC);
 
 async function ethCall(to: string, data: string): Promise<string | null> {
+  if (!HAS_BASE_RPC) return null;
+
   try {
     const res = await fetch(BASE_RPC, {
       method: "POST",
@@ -162,6 +165,8 @@ function LPVaultProgress() {
   const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   const fetchBalance = useCallback(async () => {
+    if (!HAS_BASE_RPC) return;
+
     try {
       const res = await fetch(BASE_RPC, {
         method: "POST",
@@ -197,10 +202,14 @@ function LPVaultProgress() {
       <Coord value="06.10" />
       <div className="flex items-baseline justify-between mb-2">
         <Label>Liquidity Launch</Label>
-        {deployed ? (
-          <span className="text-[10px] font-mono text-[#66C800] flex items-center gap-1.5">
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#66C800" strokeWidth="2">
-              <path d="M13 4L6 11L3 8" strokeLinecap="round" strokeLinejoin="round" />
+            {!HAS_BASE_RPC ? (
+              <span className="text-[10px] font-mono text-[#5B616E]">
+                RPC not configured
+              </span>
+            ) : deployed ? (
+              <span className="text-[10px] font-mono text-[#66C800] flex items-center gap-1.5">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#66C800" strokeWidth="2">
+                  <path d="M13 4L6 11L3 8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             Liquidity Deployed
           </span>
@@ -458,8 +467,8 @@ export default function Home() {
                 </span>
               </div>
               <p className="text-[10px] text-[#4D9FFF] leading-[1.7]">
-                Show Me Human Language: identity verification at mint (LLM solves 3
-                constraints). Mining uses algorithmic solving.
+                Show Me Human Language: LLM-gated rig minting, plus lightweight
+                algorithmic format proof on every mine.
               </p>
             </div>
             <div className="p-5 relative">
@@ -495,7 +504,7 @@ export default function Home() {
             <span className="text-[9px] font-mono text-[#4D9FFF]">
               {miningData
                 ? `${miningData.totalMines.toLocaleString()} / ${ERA_INTERVAL.toLocaleString()} mines in era ${currentEra}`
-                : "Loading..."}
+                : HAS_BASE_RPC ? "Loading..." : "RPC not configured"}
             </span>
           </div>
           <div className="flex items-start gap-1 mt-4 min-w-[520px] sm:min-w-0">
@@ -586,7 +595,7 @@ export default function Home() {
             <Coord value="04.00" />
             <Label>Inverse Bonding Curve · Sniper Protection</Label>
             <p className="text-[10px] text-[#4D9FFF] leading-[1.7] mt-2 mb-4 max-w-[400px]">
-              Linear inverse pricing: mint price decreases with supply. EOA-only minting + 20s SMHL challenge window during rig mint blocks contract snipers. No bots. No unfair advantage.
+              Linear inverse pricing: mint price decreases with supply. EOA-only minting + 20s LLM SMHL gate blocks contract snipers; rigs are ERC-721s, so secondary buyers can mine too. Every mine still verifies lightweight SMHL + hash proof.
             </p>
             {(() => {
               const dotY = miningData ? 148 - ((miningData.mintPrice - 0.0002) / 0.0018) * 136 : 12;
@@ -773,8 +782,8 @@ export default function Home() {
               Start Mining
             </h2>
             <p className="text-[12px] text-[#717886] leading-[1.7] mb-6">
-              Mint a Mining Rig. Put your AI agent to work. Earn
-              $AGENT through proof of intelligence.
+              Mint or buy a Mining Rig. Put your agent to work. Earn
+              $AGENT through SMHL-verified proof-of-work.
             </p>
             <div className="flex gap-2 mb-6">
               <a
