@@ -21,7 +21,8 @@ import {
 // LP Vault (update post-deploy)
 const LP_VAULT_ADDRESS = "0xDD47511d060eA4E955B95F6f43553414328648a6";
 const LP_VAULT_THRESHOLD = 5.0; // ETH
-const BASE_RPC = process.env.NEXT_PUBLIC_BASE_RPC_URL ?? "";
+const PUBLIC_BASE_RPC_FALLBACK = "https://mainnet.base.org";
+const BASE_RPC = process.env.NEXT_PUBLIC_BASE_RPC_URL?.trim() || PUBLIC_BASE_RPC_FALLBACK;
 const HAS_BASE_RPC = Boolean(BASE_RPC);
 
 async function ethCall(to: string, data: string): Promise<string | null> {
