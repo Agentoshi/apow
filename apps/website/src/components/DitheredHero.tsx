@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useMemo, useCallback, useState, useEffect } from "react";
-import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import { useRef, useMemo, useCallback, useState, useEffect, type RefObject } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 const ditherVertexShader = `
@@ -76,8 +76,19 @@ const ditherFragmentShader = `
   }
 `;
 
+function createDitherUniforms(opacity: number) {
+  return {
+    uTime: { value: 0 },
+    uTexture: { value: null },
+    uColor: { value: new THREE.Color("#0052FF") },
+    uDitherScale: { value: 2.5 },
+    uLogoScale: { value: 1.0 },
+    uOpacity: { value: opacity },
+  };
+}
+
 // Connection line from center to miner
-function ConnectionLine({ targetPos }: { targetPos: THREE.Vector3 }) {
+function ConnectionLine({ targetRef }: { targetRef: RefObject<THREE.Mesh | null> }) {
   const lineRef = useRef<THREE.Line>(null);
   const points = useMemo(() => [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0)], []);
   const geometry = useMemo(() => new THREE.BufferGeometry().setFromPoints(points), [points]);
@@ -85,9 +96,14 @@ function ConnectionLine({ targetPos }: { targetPos: THREE.Vector3 }) {
   const line = useMemo(() => new THREE.Line(geometry, material), [geometry, material]);
 
   useFrame(() => {
-    if (lineRef.current) {
+    if (lineRef.current && targetRef.current) {
       const positions = lineRef.current.geometry.attributes.position;
-      positions.setXYZ(1, targetPos.x, targetPos.y, targetPos.z);
+      positions.setXYZ(
+        1,
+        targetRef.current.position.x,
+        targetRef.current.position.y,
+        targetRef.current.position.z
+      );
       positions.needsUpdate = true;
     }
   });
@@ -96,34 +112,25 @@ function ConnectionLine({ targetPos }: { targetPos: THREE.Vector3 }) {
 }
 
 // Mining particle traveling from center to miner
-function MiningToken({ targetPos, delay }: { targetPos: THREE.Vector3; delay: number }) {
+function MiningToken({ targetRef, delay }: { targetRef: RefObject<THREE.Mesh | null>; delay: number }) {
   const meshRef = useRef<THREE.Mesh>(null);
+  const materialRef = useRef<THREE.ShaderMaterial>(null);
 
-  const uniforms = useMemo(
-    () => ({
-      uTime: { value: 0 },
-      uTexture: { value: null },
-      uColor: { value: new THREE.Color("#0052FF") },
-      uDitherScale: { value: 2.5 },
-      uLogoScale: { value: 1.0 },
-      uOpacity: { value: 0.8 },
-    }),
-    []
-  );
+  const uniforms = useMemo(() => createDitherUniforms(0.8), []);
 
   useFrame((state) => {
-    if (meshRef.current) {
+    if (meshRef.current && materialRef.current && targetRef.current) {
       const t = (state.clock.elapsedTime + delay) % 3;
       const progress = t / 3;
 
-      meshRef.current.position.lerpVectors(new THREE.Vector3(0, 0, 0), targetPos, progress);
+      meshRef.current.position.copy(targetRef.current.position).multiplyScalar(progress);
 
       const scale = 0.06 * (1 - Math.abs(progress - 0.5) * 0.5);
       meshRef.current.scale.setScalar(scale);
 
       const opacity = Math.sin(progress * Math.PI);
-      uniforms.uTime.value = state.clock.elapsedTime;
-      uniforms.uOpacity.value = opacity * 0.8;
+      materialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
+      materialRef.current.uniforms.uOpacity.value = opacity * 0.8;
     }
   });
 
@@ -131,6 +138,7 @@ function MiningToken({ targetPos, delay }: { targetPos: THREE.Vector3; delay: nu
     <mesh ref={meshRef}>
       <sphereGeometry args={[1, 32, 32]} />
       <shaderMaterial
+        ref={materialRef}
         vertexShader={ditherVertexShader}
         fragmentShader={ditherFragmentShader}
         uniforms={uniforms}
@@ -145,28 +153,19 @@ function MiningToken({ targetPos, delay }: { targetPos: THREE.Vector3; delay: nu
 // Miner node
 function MinerNode({ angle, radius, speed, index }: { angle: number; radius: number; speed: number; index: number }) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const position = useMemo(() => new THREE.Vector3(), []);
+  const materialRef = useRef<THREE.ShaderMaterial>(null);
 
-  const uniforms = useMemo(
-    () => ({
-      uTime: { value: 0 },
-      uTexture: { value: null },
-      uColor: { value: new THREE.Color("#0052FF") },
-      uDitherScale: { value: 2.5 },
-      uLogoScale: { value: 1.0 },
-      uOpacity: { value: 1.0 },
-    }),
-    []
-  );
+  const uniforms = useMemo(() => createDitherUniforms(1), []);
 
   useFrame((state) => {
-    if (meshRef.current) {
+    if (meshRef.current && materialRef.current) {
       const t = state.clock.elapsedTime * speed + angle;
-      position.x = Math.cos(t) * radius;
-      position.y = Math.sin(t * 0.7) * radius * 0.4;
-      position.z = Math.sin(t) * radius;
-      meshRef.current.position.copy(position);
-      uniforms.uTime.value = state.clock.elapsedTime;
+      meshRef.current.position.set(
+        Math.cos(t) * radius,
+        Math.sin(t * 0.7) * radius * 0.4,
+        Math.sin(t) * radius
+      );
+      materialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
     }
   });
 
@@ -175,6 +174,7 @@ function MinerNode({ angle, radius, speed, index }: { angle: number; radius: num
       <mesh ref={meshRef}>
         <sphereGeometry args={[0.12, 32, 32]} />
         <shaderMaterial
+          ref={materialRef}
           vertexShader={ditherVertexShader}
           fragmentShader={ditherFragmentShader}
           uniforms={uniforms}
@@ -182,8 +182,8 @@ function MinerNode({ angle, radius, speed, index }: { angle: number; radius: num
           toneMapped={false}
         />
       </mesh>
-      <ConnectionLine targetPos={position} />
-      <MiningToken targetPos={position} delay={index * 0.4} />
+      <ConnectionLine targetRef={meshRef} />
+      <MiningToken targetRef={meshRef} delay={index * 0.4} />
     </group>
   );
 }
@@ -191,23 +191,14 @@ function MinerNode({ angle, radius, speed, index }: { angle: number; radius: num
 // Central dithered sphere
 function CentralOrb({ onReady }: { onReady?: () => void }) {
   const meshRef = useRef<THREE.Mesh>(null);
+  const materialRef = useRef<THREE.ShaderMaterial>(null);
   const firedRef = useRef(false);
 
-  const uniforms = useMemo(
-    () => ({
-      uTime: { value: 0 },
-      uTexture: { value: null },
-      uColor: { value: new THREE.Color("#0052FF") },
-      uDitherScale: { value: 2.5 },
-      uLogoScale: { value: 1.0 },
-      uOpacity: { value: 1.0 },
-    }),
-    []
-  );
+  const uniforms = useMemo(() => createDitherUniforms(1), []);
 
   useFrame((state) => {
-    if (meshRef.current) {
-      uniforms.uTime.value = state.clock.elapsedTime;
+    if (meshRef.current && materialRef.current) {
+      materialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
 
       if (!firedRef.current) {
         firedRef.current = true;
@@ -220,6 +211,7 @@ function CentralOrb({ onReady }: { onReady?: () => void }) {
     <mesh ref={meshRef} position={[0, 0, 0]}>
       <sphereGeometry args={[1, 64, 64]} />
       <shaderMaterial
+        ref={materialRef}
         vertexShader={ditherVertexShader}
         fragmentShader={ditherFragmentShader}
         uniforms={uniforms}

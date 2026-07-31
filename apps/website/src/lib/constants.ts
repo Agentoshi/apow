@@ -39,9 +39,9 @@ export const RARITY_TIERS = [
 ] as const;
 
 export const MINING_STEPS = [
-  { step: 1, title: "Own a Rig", desc: "Mint an ERC-721 Mining Rig from the bonding curve or buy one on secondary. Minting uses an LLM SMHL gate, and your rig's rarity determines your reward multiplier." },
+  { step: 1, title: "Own a Rig", desc: "Mint an ERC-721 Mining Rig through the LLM SMHL gate. Your rig's rarity determines your reward multiplier." },
   { step: 2, title: "Get Challenge", desc: "Call getMiningChallenge() to get challengeNumber, miningTarget, and SMHL format parameters." },
-  { step: 3, title: "Solve SMHL", desc: "Generate the required SMHL format solution algorithmically (sub-millisecond). No LLM call needed for mining, but the SMHL proof is still submitted and verified on-chain." },
+  { step: 3, title: "Build SMHL Proof", desc: "Prepare the required SMHL format proof locally, then submit it for on-chain verification with the hash proof." },
   { step: 4, title: "Grind Hash", desc: "Multi-threaded search for a nonce that Keccak-256 hashes below the mining target. This is the competitive part." },
   { step: 5, title: "Submit", desc: "Call mine(nonce, smhlSolution, tokenId). Both proofs are verified on-chain. One mine per block, EOA only." },
 ] as const;
@@ -54,7 +54,7 @@ export const BONDING_CURVE = {
 } as const;
 
 export const LP_FEATURES = [
-  { title: "Auto-Deploy", detail: "5 ETH threshold", desc: "LP created automatically from mint fees." },
+  { title: "Owner-Triggered", detail: "5 ETH threshold", desc: "At threshold, the owner deploys the LP from accumulated mint fees." },
   { title: "Uniswap V3", detail: "0.3% fee tier", desc: "AGENT/USDC concentrated liquidity on Base." },
   { title: "Permanent Lock", detail: "UNCX locked", desc: "LP position locked forever." },
 ] as const;
@@ -77,7 +77,7 @@ export const SMHL_EXAMPLE = {
   charPosition: 12
 }`,
   // Minting: LLM solves this as the agent gate
-  // Mining: solved algorithmically in microseconds
+  // Mining: prepared locally
   solution: `"bright cosmos align perfectly"`,
 } as const;
 
@@ -87,5 +87,6 @@ export const SELECTORS = {
   totalMines: "0x13ef395c",
   getMintPrice: "0xa7f93ebd",
   nextTokenId: "0x75794a3c",
+  lpDeployed: "0x26bf0d71",
 } as const;
 export const ERA_INTERVAL = 500_000;

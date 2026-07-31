@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import {
   PROTOCOL,
-  TOKENOMICS,
   RARITY_TIERS,
   EMISSION_ERAS,
   MINING_STEPS,
@@ -163,25 +162,32 @@ function CrtToggle({ on, setOn }: { on: boolean; setOn: (v: boolean) => void }) 
 
 function LPVaultProgress() {
   const [balance, setBalance] = useState<number | null>(null);
+  const [lpDeployed, setLpDeployed] = useState<boolean | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   const fetchBalance = useCallback(async () => {
     if (!HAS_BASE_RPC) return;
 
     try {
-      const res = await fetch(BASE_RPC, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "eth_getBalance",
-          params: [LP_VAULT_ADDRESS, "latest"],
+      const [res, deployedHex] = await Promise.all([
+        fetch(BASE_RPC, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "eth_getBalance",
+            params: [LP_VAULT_ADDRESS, "latest"],
+          }),
         }),
-      });
+        ethCall(LP_VAULT_ADDRESS, SELECTORS.lpDeployed),
+      ]);
       const data = await res.json();
       if (data.result) {
         setBalance(parseInt(data.result, 16) / 1e18);
+      }
+      if (deployedHex) {
+        setLpDeployed(parseInt(deployedHex, 16) !== 0);
       }
     } catch {
       // Keep last known value on error
@@ -189,14 +195,17 @@ function LPVaultProgress() {
   }, []);
 
   useEffect(() => {
-    fetchBalance();
+    const initialFetch = setTimeout(() => void fetchBalance(), 0);
     intervalRef.current = setInterval(fetchBalance, 30_000);
-    return () => clearInterval(intervalRef.current);
+    return () => {
+      clearTimeout(initialFetch);
+      clearInterval(intervalRef.current);
+    };
   }, [fetchBalance]);
 
   const ethBalance = balance ?? 0;
-  const percent = Math.min((ethBalance / LP_VAULT_THRESHOLD) * 100, 100);
-  const deployed = ethBalance >= LP_VAULT_THRESHOLD;
+  const percent = lpDeployed ? 100 : Math.min((ethBalance / LP_VAULT_THRESHOLD) * 100, 100);
+  const thresholdReached = ethBalance >= LP_VAULT_THRESHOLD;
 
   return (
     <div className="border-b border-[rgba(255,255,255,0.04)] p-6 relative">
@@ -207,7 +216,7 @@ function LPVaultProgress() {
               <span className="text-[10px] font-mono text-[#5B616E]">
                 RPC not configured
               </span>
-            ) : deployed ? (
+            ) : lpDeployed ? (
               <span className="text-[10px] font-mono text-[#66C800] flex items-center gap-1.5">
                 <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#66C800" strokeWidth="2">
                   <path d="M13 4L6 11L3 8" strokeLinecap="round" strokeLinejoin="round" />
@@ -222,10 +231,11 @@ function LPVaultProgress() {
       </div>
 
       <p className="text-[10px] text-[#4D9FFF] leading-[1.7] mb-2 max-w-[600px]">
-        Mint fees accumulate in the LP Vault. When the vault reaches {LP_VAULT_THRESHOLD} ETH, liquidity deploys to Uniswap V3 and locks forever.
+        Mint fees accumulate in the LP Vault. At {LP_VAULT_THRESHOLD} ETH, an owner-triggered transaction deploys the Uniswap V3 position and locks it forever.
       </p>
       <p className="text-[9px] font-mono text-[#717886] leading-[1.6] mb-4 max-w-[600px]">
-        * $AGENT transfers are disabled until the vault reaches 100%, protecting miners from fake LPs.
+        * $AGENT transfers remain disabled until the contract confirms that liquidity is deployed.
+        {thresholdReached && !lpDeployed ? " The funding threshold has been reached; deployment is pending." : ""}
       </p>
 
       {/* Progress bar */}
@@ -234,16 +244,16 @@ function LPVaultProgress() {
           className="absolute inset-y-0 left-0 transition-all duration-1000 ease-out"
           style={{
             width: `${percent}%`,
-            background: deployed
+            background: lpDeployed
               ? "linear-gradient(90deg, #66C800, #44AA00)"
               : "linear-gradient(90deg, #0052FF, #4D9FFF)",
-            boxShadow: deployed
+            boxShadow: lpDeployed
               ? "0 0 12px rgba(102,200,0,0.4)"
               : "0 0 12px rgba(0,82,255,0.4)",
           }}
         >
           {/* Pulse animation */}
-          {!deployed && (
+          {!lpDeployed && (
             <div
               className="absolute inset-0 animate-pulse"
               style={{
@@ -285,7 +295,7 @@ export default function Home() {
         )
       ).then(() => setProgress((p) => Math.max(p, 0.7)));
     } else {
-      setProgress((p) => Math.max(p, 0.7));
+      Promise.resolve().then(() => setProgress((p) => Math.max(p, 0.7)));
     }
   }, []);
 
@@ -425,7 +435,7 @@ export default function Home() {
             { val: "21M", label: "max supply", coord: "01.00" },
             { val: "90%", label: "mineable", coord: "01.01" },
             { val: "10%", label: "lp reserve", coord: "01.02" },
-          ].map((s, i) => (
+          ].map((s) => (
             <div key={s.label} className="p-5 relative">
               <Coord value={s.coord} />
               <p className="text-[32px] font-bold tracking-[-0.03em] mb-1 font-mono">
@@ -468,8 +478,7 @@ export default function Home() {
                 </span>
               </div>
               <p className="text-[10px] text-[#4D9FFF] leading-[1.7]">
-                Show Me Human Language: LLM-gated rig minting, plus lightweight
-                algorithmic format proof on every mine.
+                Mining difficulty adjusts so rewards distribute roughly every 10s (~5 Base blocks).
               </p>
             </div>
             <div className="p-5 relative">
@@ -486,9 +495,7 @@ export default function Home() {
               <p className="text-[10px] text-[#4D9FFF] leading-[1.7]">
                 Find a nonce that Keccak-256 hashes below the mining target.
                 Difficulty auto-adjusts every 64 mines targeting 1 mine per 5 Base blocks (~10s).
-                Works on any CPU out of the box. Add a GPU for 100x+ faster grinding. Rent one on{" "}
-                <a href="https://vast.ai/" target="_blank" rel="noopener noreferrer" className="underline">vast.ai</a>{" "}
-                if you don't have one locally.
+                Works with local or cloud base CPUs &amp; GPUs
               </p>
             </div>
           </div>
@@ -562,7 +569,7 @@ export default function Home() {
             </span>
           </div>
           <div className="dashboard grid-cols-5">
-            {RARITY_TIERS.map((tier, i) => (
+            {RARITY_TIERS.map((tier) => (
               <div key={tier.name} className="p-4 relative group">
                 <div className="flex items-center gap-1.5 mb-3">
                   <div
@@ -594,13 +601,23 @@ export default function Home() {
         <div className="grid grid-cols-1 sm:grid-cols-12 border-b border-[rgba(255,255,255,0.04)]">
           <div className="sm:col-span-7 p-6 relative sm:border-r border-b sm:border-b-0 border-[rgba(255,255,255,0.04)] flex flex-col">
             <Coord value="04.00" />
-            <Label>Inverse Bonding Curve · Sniper Protection</Label>
+            <Label>Inverse Bonding Curve</Label>
             <p className="text-[10px] text-[#4D9FFF] leading-[1.7] mt-2 mb-4 max-w-[400px]">
-              Linear inverse pricing: mint price decreases with supply. EOA-only minting + 20s LLM SMHL gate blocks contract snipers; rigs are ERC-721s, so secondary buyers can mine too. Every mine still verifies lightweight SMHL + hash proof.
+              Stepwise inverse pricing: mint price decreases 5% every 100 rigs until the 0.0002 ETH floor. This narrows the price advantage between earlier and later participants.
             </p>
             {(() => {
+              const priceAtSupply = (supply: number) =>
+                Math.max(0.0002, 0.002 * Math.pow(0.95, Math.floor(supply / 100)));
+              const chartX = (supply: number) => 40 + (Math.min(Math.max(supply, 0), 10_000) / 10_000) * 350;
+              const chartY = (price: number) => 148 - ((price - 0.0002) / 0.0018) * 136;
+              const stepPath = Array.from({ length: 101 }, (_, step) => {
+                const supply = step * 100;
+                const x = chartX(supply);
+                const y = chartY(priceAtSupply(supply));
+                return step === 0 ? `M ${x} ${y}` : `H ${x} V ${y}`;
+              }).join(" ");
               const dotY = miningData ? 148 - ((miningData.mintPrice - 0.0002) / 0.0018) * 136 : 12;
-              const dotX = dotY >= 148 ? 390 : 40 + ((dotY - 12) / 136) * 332;
+              const dotX = miningData ? chartX(miningData.rigsMinted) : 40;
               return (
                 <svg viewBox="0 0 400 160" className="w-full flex-1 min-h-[160px]" preserveAspectRatio="xMidYMid meet" fill="none">
                   {[0, 40, 80, 120, 160].map((y) => (
@@ -610,14 +627,14 @@ export default function Home() {
                     <line key={x} x1={x} y1="0" x2={x} y2="160" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
                   ))}
                   <path
-                    d="M 40 12 L 372 148 L 390 148"
+                    d={stepPath}
                     stroke="#0052FF"
                     strokeWidth="1.5"
                     fill="none"
                     style={{ filter: "drop-shadow(0 0 6px rgba(0,82,255,0.4))" }}
                   />
                   <path
-                    d="M 40 12 L 372 148 L 390 148 L 390 160 L 40 160 Z"
+                    d={`${stepPath} L 390 160 L 40 160 Z`}
                     fill="url(#curveGrad)"
                     opacity="0.15"
                   />
@@ -667,7 +684,7 @@ export default function Home() {
                 {BONDING_CURVE.maxSupply}
               </p>
               <p className="text-[9px] font-mono text-[#4D9FFF] mt-1">
-                // price decreases as supply increases
+                {"// price decreases as supply increases"}
               </p>
             </div>
           </div>
@@ -724,7 +741,7 @@ export default function Home() {
                 </pre>
               </div>
               <p className="text-[9px] text-[#4D9FFF] leading-[1.6]">
-                // AI generates natural language satisfying 3 on-chain constraints.
+                {"// AI generates natural language satisfying 3 on-chain constraints. "}
                 Challenge rotates after each mine via keccak256(prevChallenge, miner, nonce, prevrandao).
               </p>
             </div>
@@ -758,7 +775,7 @@ export default function Home() {
         {/* NO RUG CALLOUT */}
         <div className="border-b border-[rgba(255,255,255,0.04)] px-6 py-3 flex items-center justify-between">
           <p className="text-[10px] font-mono text-[#4D9FFF]">
-            // no pre-mine. no team tokens. protocol-owned liquidity.
+            {"// no pre-mine. no team tokens. protocol-owned liquidity."}
           </p>
           <div className="flex gap-3">
             {["Uniswap V3", "UNCX Lock", "Permanent"].map((tag) => (
@@ -783,7 +800,7 @@ export default function Home() {
               Start Mining
             </h2>
             <p className="text-[12px] text-[#717886] leading-[1.7] mb-6">
-              Mint or buy a Mining Rig. Put your agent to work. Earn
+              Mint a Mining Rig. Put your agent to work. Earn
               $AGENT through SMHL-verified proof-of-work.
             </p>
             <div className="flex gap-2 mb-6">

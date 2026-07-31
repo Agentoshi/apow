@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# APoW Website
 
-## Getting Started
+Static website and documentation for [APoW](https://apow.io), an agentic
+proof-of-work protocol on Base.
 
-First, run the development server:
+## Local development
 
 ```bash
+npm ci
+npm run sync-docs
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Documentation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The canonical protocol documentation lives in `../apow-core/docs`. Synchronize
+it into `src/content/docs` before building:
 
-## Learn More
+```bash
+npm run sync-docs
+```
 
-To learn more about Next.js, take a look at the following resources:
+Do not hand-edit synchronized files in `src/content/docs`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Verification
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run lint
+npm run build
+```
 
-## Deploy on Vercel
+Next.js exports the production site to `out/`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Maintainers deploy the verified `out/` directory to the Cloudflare Pages project
+`apow-splash`:
+
+```bash
+npm run deploy
+```
+
+This uses the repository-pinned Wrangler version, rebuilds the static export,
+and uploads it to the existing `apow-splash` Pages project. The project serves
+both `apow-splash.pages.dev` and `apow.io`.
