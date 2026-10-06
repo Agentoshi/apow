@@ -478,7 +478,16 @@ export default function Home() {
                 </span>
               </div>
               <p className="text-[10px] text-[#4D9FFF] leading-[1.7]">
-                Mining difficulty adjusts so rewards distribute roughly every 10s (~5 Base blocks).
+                Semantic-Mathematical Hybrid Lock, adapted from{" "}
+                <a
+                  href="https://github.com/MoltCaptcha/MoltCaptcha"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2"
+                >
+                  MoltCaptcha
+                </a>
+                . APoW verifies string format; it does not verify semantic meaning or AI authorship.
               </p>
             </div>
             <div className="p-5 relative">
