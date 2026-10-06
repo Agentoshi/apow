@@ -7,19 +7,36 @@ const DitheredHero = dynamic(() => import("@/components/DitheredHero"), {
   ssr: false,
 });
 
-const MINING_INSTRUCTIONS = `Read the mining guide at https://apow.io/skill.md and follow it to start mining AGENT tokens autonomously.`;
+const ASSISTANTS = [
+  { name: "Choose your assistant", anchor: "" },
+  { name: "Grok Bot", anchor: "grok-bot" },
+  { name: "Muse", anchor: "muse" },
+  { name: "Instinct", anchor: "instinct" },
+  { name: "Wajo / Fo", anchor: "wajo-fo" },
+  { name: "OpenClaw", anchor: "openclaw" },
+  { name: "Hermes", anchor: "hermes" },
+  { name: "Claude Code", anchor: "claude-code" },
+  { name: "Codex", anchor: "codex" },
+  { name: "Manus", anchor: "manus" },
+  { name: "Claude Cowork", anchor: "claude-cowork" },
+  { name: "Perplexity Computer", anchor: "perplexity-computer-personal-computer" },
+];
 
 export default function MinePage() {
   const [copied, setCopied] = useState(false);
+  const [assistantIndex, setAssistantIndex] = useState(0);
+  const assistant = ASSISTANTS[assistantIndex];
+  const guide = `https://apow.io/docs/technical/assistants${assistant.anchor ? `#${assistant.anchor}` : ""}`;
+  const miningInstructions = `Read https://apow.io/skill.md and ${guide}${assistant.anchor ? ` for ${assistant.name}` : ""}. Use Easy Mode to mine AGENT with remote GPU grinding. Check secure wallet recovery and your runner's persistence before funding. Give me one Base ETH deposit quote; convert the service budget to USDC automatically and keep the same wallet across retries. Use my approved budget, never rent a VPS or enable local CPU fallback by default, and report the first confirmed mining transaction. If this runtime cannot persist or unlock securely, explain that limit before asking for funds.`;
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(MINING_INSTRUCTIONS);
+    navigator.clipboard.writeText(miningInstructions);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="w-screen h-screen flex items-center justify-center bg-[oklch(0.09_0.005_270)] overflow-hidden relative">
+    <div className="w-screen min-h-screen py-8 flex items-center justify-center bg-[oklch(0.09_0.005_270)] overflow-x-hidden relative">
       {/* Three.js background */}
       <div className="absolute inset-0">
         <DitheredHero />
@@ -82,7 +99,7 @@ export default function MinePage() {
 
             {/* Compatibility note */}
             <p className="text-[9px] sm:text-[10px] text-[#717886] mb-3 sm:mb-4 text-center leading-[1.6]">
-              Point your OpenClaw, NanoClaw, Hermes, Claude Code, Codex, etc... works with any agentic LLM.{" "}
+              Select your assistant for its setup instructions. A supported runner and secure wallet unlock are required.{" "}
               <a
                 href="https://clawhub.ai/Agentoshi/apow-mining"
                 target="_blank"
@@ -93,6 +110,16 @@ export default function MinePage() {
               </a>
               .
             </p>
+
+            <label htmlFor="mining-assistant" className="block text-[10px] font-mono text-[#B1B7C3] mb-2">Your assistant</label>
+            <select
+              id="mining-assistant"
+              value={assistantIndex}
+              onChange={(event) => { setAssistantIndex(Number(event.target.value)); setCopied(false); }}
+              className="w-full border border-[rgba(255,255,255,0.12)] bg-[#0a0b0d] p-3 mb-4 text-[12px] text-[#B1B7C3]"
+            >
+              {ASSISTANTS.map((item, index) => <option key={item.name} value={index}>{item.name}</option>)}
+            </select>
 
             {/* Code field */}
             <div className="relative">
@@ -116,14 +143,18 @@ export default function MinePage() {
               </div>
 
               <pre className="bg-[rgba(0,0,0,0.4)] border border-[rgba(255,255,255,0.06)] p-4 sm:p-6 pr-12 text-[11px] sm:text-[12px] leading-[1.7] font-mono text-[#B1B7C3] whitespace-pre-wrap break-all">
-                <code>{MINING_INSTRUCTIONS}</code>
+                <code>{miningInstructions}</code>
               </pre>
             </div>
 
             {/* Security warning */}
-            <p className="text-[8px] sm:text-[9px] font-mono text-[#717886] mt-2 sm:mt-3 leading-[1.7] max-w-[680px] mx-auto">
-              * This guide may instruct your AI agent to create Base wallet(s) and encrypted JSON keystores. Use a local, secure device; keep keystore passwords in your shell or secret manager; export raw keys only when intentionally importing into another wallet.
+            <p className="text-[9px] font-mono text-[#B1B7C3] mt-3 leading-[1.7]">
+              The ETH-only CLI update awaits npm publication. Your agent must stop if the guide’s pinned version is unavailable.
             </p>
+            <p className="text-[8px] sm:text-[9px] font-mono text-[#717886] mt-2 sm:mt-3 leading-[1.7] max-w-[680px] mx-auto">
+              Deposit Base ETH once. Keep an encrypted wallet backup and its password separately. Never send wallet secrets in chat. Fully managed mining is in development.
+            </p>
+            <a href={guide} className="inline-block mt-3 text-[10px] text-[#4D9FFF] underline">Read assistant guide</a>
 
           </div>
         </div>
