@@ -25,7 +25,7 @@ jobs:
           echo "price=$ETH" >> "$GITHUB_OUTPUT"
           echo "Current mint price: $ETH ETH"
 
-      - name: Update docs/README.md
+      - name: Update packages/core/docs/README.md
         run: |
           PRICE="${{ steps.price.outputs.price }}"
           if [ -z "$PRICE" ] || [ "$PRICE" = "0" ]; then
@@ -33,18 +33,18 @@ jobs:
             exit 0
           fi
           # Replace "For X.XXXX ETH" in the mint step
-          sed -i "s/For [0-9]\.[0-9]* ETH/For $PRICE ETH/" docs/README.md
+          sed -i "s/For [0-9]\.[0-9]* ETH/For $PRICE ETH/" packages/core/docs/README.md
 
       - name: Check for changes
         id: diff
         run: |
-          git diff --quiet docs/README.md && echo "changed=false" >> "$GITHUB_OUTPUT" || echo "changed=true" >> "$GITHUB_OUTPUT"
+          git diff --quiet packages/core/docs/README.md && echo "changed=false" >> "$GITHUB_OUTPUT" || echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Commit and push
         if: steps.diff.outputs.changed == 'true'
         run: |
           git config user.name "Agentoshi"
           git config user.email "agentoshi@users.noreply.github.com"
-          git add docs/README.md
+          git add packages/core/docs/README.md
           git commit -m "docs: auto-update mint price to ${{ steps.price.outputs.price }} ETH"
           git push
