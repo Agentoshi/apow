@@ -17,3 +17,4 @@ Every APoW project lives here. Each folder keeps its own package.json and lockfi
 - Check the package version and npm identity before any `npm publish`.
 - Never commit media; run `media-link <folder>` first (see ~/.claude/CLAUDE.md).
 - Code work runs in PStack poteto-mode.
+- This repo is public. Never commit infra IDs or keys: wrangler.toml files use placeholders like `<D1_DATABASE_ID>`. The real values live in the gitignored `.cloudflare-ids.local`; fill them in locally to deploy and don't commit them.
