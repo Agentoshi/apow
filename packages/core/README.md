@@ -113,13 +113,19 @@ forge test --match-path test/LPVaultFork.t.sol --fork-url $BASE_RPC
 forge inspect MiningAgent storage-layout
 ```
 
-## Repos
+## Repo
 
-| Repo | Description |
+Everything lives in the [APoW monorepo](https://github.com/Agentoshi/apow).
+
+| Folder | Description |
 |------|-------------|
-| [apow-core](https://github.com/Agentoshi/apow-core) | Contracts, deploy scripts, protocol docs (this repo) |
-| [apow-cli](https://github.com/Agentoshi/apow-cli) | Mining CLI (`npx apow`), TypeScript, publishable to npm |
-| [apow-website](https://github.com/Agentoshi/apow-website) | Landing page and documentation |
+| [packages/core](https://github.com/Agentoshi/apow/tree/main/packages/core) | Contracts, deploy scripts, protocol docs (this folder) |
+| [packages/cli](https://github.com/Agentoshi/apow/tree/main/packages/cli) | Mining CLI (`npx apow`), TypeScript, publishable to npm |
+| [packages/grind](https://github.com/Agentoshi/apow/tree/main/packages/grind) | GPU grinder and x402 GrindProxy worker |
+| [apps/website](https://github.com/Agentoshi/apow/tree/main/apps/website) | Landing page and documentation |
+| [apps/dashboard](https://github.com/Agentoshi/apow/tree/main/apps/dashboard) | Mining dashboard |
+| [apps/mini](https://github.com/Agentoshi/apow/tree/main/apps/mini) | Cloud mining mini app |
+| [apps/pool](https://github.com/Agentoshi/apow/tree/main/apps/pool) | Mining pool agent (ACP) |
 
 ### Quick Start (Mining)
 
@@ -129,7 +135,7 @@ forge inspect MiningAgent storage-layout
 npx apow start   # guided happy path: setup -> funding checks -> mint -> mine
 ```
 
-See [apow-cli](https://github.com/Agentoshi/apow-cli) for full documentation.
+See [packages/cli](https://github.com/Agentoshi/apow/tree/main/packages/cli) for full documentation.
 
 ## Deploy Order
 

@@ -30,7 +30,7 @@ export function DocsShell({ slug = [] }: DocsShellProps) {
         </div>
         <nav className="docs-toplinks" aria-label="Top navigation">
           <Link href="/">Website</Link>
-          <a href="https://github.com/Agentoshi/apow-core/tree/main/docs" target="_blank" rel="noopener noreferrer">
+          <a href="https://github.com/Agentoshi/apow/tree/main/packages/core/docs" target="_blank" rel="noopener noreferrer">
             GitHub
           </a>
         </nav>

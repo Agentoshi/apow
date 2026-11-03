@@ -16,5 +16,6 @@ Every APoW project lives here. Each folder keeps its own package.json and lockfi
 - `packages/cli/skill.md` is canonical. When it changes, update `packages/core/docs/skill.md`, `apps/website/public/skill.md` and `apps/website/src/content/docs/skill.md` in the same commit.
 - Check the package version and npm identity before any `npm publish`.
 - Never commit media; run `media-link <folder>` first (see ~/.claude/CLAUDE.md).
-- Code work runs in PStack poteto-mode.
+- Code work runs in PStack poteto-mode. Prove changes with the `verify-apow` skill (`.claude/skills/verify-apow/SKILL.md`); keep it current when a folder's build, test or launch steps change.
+- Contracts need their submodules: run `git submodule update --init` once after cloning.
 - This repo is public. Never commit infra IDs or keys: wrangler.toml files use placeholders like `<D1_DATABASE_ID>`. The real values live in the gitignored `.cloudflare-ids.local`; fill them in locally to deploy and don't commit them.

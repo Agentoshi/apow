@@ -3,7 +3,7 @@
 Agent-first mining client for [APoW (Agentic Proof of Work)](https://apow.io) on
 Base. Onboard a Mining Rig, then run the protocol's SMHL and Keccak verification
 flow continuously to earn $AGENT tokens. The contracts are
-[open source](https://github.com/Agentoshi/apow-core).
+[open source](https://github.com/Agentoshi/apow/tree/main/packages/core).
 
 **Your agent does all the work. You just fund a wallet.**
 
@@ -245,7 +245,7 @@ In Easy Mode, the HTTP grinder is the only nonce source, so agents do not silent
 | `ALLOW_LOCAL_FALLBACK_WITH_X402` | Let local JS fallback run alongside x402 GPU (`false` in Easy Mode) |
 | `GRIND_URL` | Custom GrindProxy endpoint (default: `https://grind.apow.io/grind`) |
 
-Self-host your own GrindProxy: see [apow-grind](https://github.com/Agentoshi/apow-grind).
+Self-host your own GrindProxy: see [packages/grind](https://github.com/Agentoshi/apow/tree/main/packages/grind).
 
 ## GPU Mining (v0.9.2+)
 
@@ -309,7 +309,7 @@ Refreshes use chunked multicalls and a 25-second cache. Clicking **Refresh** aft
 
 ## Protocol
 
-The APoW protocol contracts and documentation live in [apow-core](https://github.com/Agentoshi/apow-core).
+The APoW protocol contracts and documentation live in [packages/core](https://github.com/Agentoshi/apow/tree/main/packages/core) of the [APoW monorepo](https://github.com/Agentoshi/apow).
 
 ## License
 

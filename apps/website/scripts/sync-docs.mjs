@@ -4,7 +4,7 @@ import path from "node:path";
 const projectRoot = process.cwd();
 const sourceRoot = path.resolve(
   projectRoot,
-  process.env.APOW_DOCS_SOURCE ?? "../apow-core/docs",
+  process.env.APOW_DOCS_SOURCE ?? "../../packages/core/docs",
 );
 const targetRoot = path.resolve(projectRoot, "src/content/docs");
 
