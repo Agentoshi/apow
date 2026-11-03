@@ -1,0 +1,266 @@
+// Uniswap V3 SwapRouter02 on Base — ETH↔USDC swaps.
+// No new npm deps — uses viem's built-in ABI encoding.
+
+import type { Address, Hex } from "viem";
+import { concat, encodeFunctionData, formatEther, formatUnits } from "viem";
+import { estimateL1Fee } from "viem/op-stack";
+
+import { TOKENS, SLIPPAGE_BPS } from "./constants";
+import { DATA_SUFFIX, getFundingClients, requireWallet } from "../wallet";
+
+const SWAP_ROUTER = "0x2626664c2603336E57B271c5C0b26F421741e481" as Address;
+const WETH = TOKENS.base.weth;
+const USDC = TOKENS.base.usdc;
+const FEE_TIER = 500; // 0.05% pool (highest TVL)
+
+/** Read-only QuoterV2 simulation. Include a 2% input buffer, rounded up. */
+async function quoteForExactOutput(tokenIn: Address, tokenOut: Address, amount: bigint): Promise<bigint> {
+  const { publicClient } = getFundingClients();
+  const { result } = await publicClient.simulateContract({
+    address: "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a",
+    abi: [{ name: "quoteExactOutputSingle", type: "function", stateMutability: "nonpayable", inputs: [{
+      name: "params", type: "tuple", components: [
+        { name: "tokenIn", type: "address" }, { name: "tokenOut", type: "address" },
+        { name: "amount", type: "uint256" }, { name: "fee", type: "uint24" },
+        { name: "sqrtPriceLimitX96", type: "uint160" },
+      ],
+    }], outputs: [{ name: "amountIn", type: "uint256" }, { name: "sqrtPriceX96After", type: "uint160" },
+      { name: "initializedTicksCrossed", type: "uint32" }, { name: "gasEstimate", type: "uint256" }] }] as const,
+    functionName: "quoteExactOutputSingle",
+    args: [{ tokenIn, tokenOut, amount, fee: FEE_TIER, sqrtPriceLimitX96: 0n }],
+  });
+  return (result[0] * BigInt(10000 + SLIPPAGE_BPS) + 9999n) / 10000n;
+}
+
+export const quoteEthForUsdc = (usdcOut: bigint) => quoteForExactOutput(WETH, USDC, usdcOut);
+export const quoteUsdcForEth = (ethOut: bigint) => quoteForExactOutput(USDC, WETH, ethOut);
+
+const erc20Abi = [
+  {
+    type: "function" as const,
+    name: "balanceOf",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view" as const,
+  },
+  {
+    type: "function" as const,
+    name: "allowance",
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view" as const,
+  },
+  {
+    type: "function" as const,
+    name: "approve",
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "nonpayable" as const,
+  },
+] as const;
+
+const swapRouterAbi = [
+  {
+    name: "exactInputSingle",
+    type: "function" as const,
+    stateMutability: "payable" as const,
+    inputs: [
+      {
+        name: "params",
+        type: "tuple",
+        components: [
+          { name: "tokenIn", type: "address" },
+          { name: "tokenOut", type: "address" },
+          { name: "fee", type: "uint24" },
+          { name: "recipient", type: "address" },
+          { name: "amountIn", type: "uint256" },
+          { name: "amountOutMinimum", type: "uint256" },
+          { name: "sqrtPriceLimitX96", type: "uint160" },
+        ],
+      },
+    ],
+    outputs: [{ name: "amountOut", type: "uint256" }],
+  },
+  {
+    name: "multicall",
+    type: "function" as const,
+    stateMutability: "payable" as const,
+    inputs: [
+      { name: "deadline", type: "uint256" },
+      { name: "data", type: "bytes[]" },
+    ],
+    outputs: [{ name: "results", type: "bytes[]" }],
+  },
+  {
+    name: "unwrapWETH9",
+    type: "function" as const,
+    stateMutability: "payable" as const,
+    inputs: [
+      { name: "amountMinimum", type: "uint256" },
+      { name: "recipient", type: "address" },
+    ],
+    outputs: [],
+  },
+] as const;
+
+export interface SwapFeeBudget {
+  gas: bigint;
+  maxFeePerGas: bigint;
+  maxPriorityFeePerGas: bigint;
+  feeReserve: bigint;
+}
+
+/** Quote all Base fee components without requiring a funded sender. */
+export async function quoteEthSwapFees(ethAmount: bigint, minUsdcOut: bigint): Promise<SwapFeeBudget> {
+  const { publicClient, account } = getFundingClients();
+  if (!account) throw new Error("Unlock the same wallet before quoting swap fees");
+  const gas = 600_000n; // Explicit transaction ceiling, also used at signing.
+  const data = concat([encodeFunctionData({ abi: swapRouterAbi, functionName: "exactInputSingle", args: [{
+    tokenIn: WETH, tokenOut: USDC, fee: FEE_TIER, recipient: account.address,
+    amountIn: ethAmount, amountOutMinimum: minUsdcOut, sqrtPriceLimitX96: 0n,
+  }] }), DATA_SUFFIX]);
+  const [fees, l1Fee, scalar, constant] = await Promise.all([
+    publicClient.estimateFeesPerGas(),
+    estimateL1Fee(publicClient, { account: account.address, to: SWAP_ROUTER, data, value: ethAmount }),
+    publicClient.readContract({ address: "0x4200000000000000000000000000000000000015",
+      abi: [{ name: "operatorFeeScalar", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "uint32" }] }], functionName: "operatorFeeScalar" }),
+    publicClient.readContract({ address: "0x4200000000000000000000000000000000000015",
+      abi: [{ name: "operatorFeeConstant", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "uint64" }] }], functionName: "operatorFeeConstant" }),
+  ]);
+  const operatorFee = gas * BigInt(scalar) / 1_000_000n + BigInt(constant);
+  return { gas, ...fees, feeReserve: gas * fees.maxFeePerGas + 2n * (l1Fee + operatorFee) };
+}
+
+/** Get USDC balance for an address on Base. */
+export async function getUsdcBalance(address: Address): Promise<bigint> {
+  const { publicClient } = getFundingClients();
+
+  return (await publicClient.readContract({
+    address: USDC,
+    abi: erc20Abi,
+    functionName: "balanceOf",
+    args: [address],
+  })) as bigint;
+}
+
+/**
+ * Swap ETH → USDC via Uniswap V3 on Base.
+ * Sends ETH as msg.value; router auto-wraps to WETH.
+ */
+export async function swapEthToUsdc(
+  ethAmount: bigint,
+  minUsdcOut: bigint,
+  fees?: SwapFeeBudget,
+): Promise<{ txHash: Hex; usdcReceived: string }> {
+  const walletContext = requireWallet();
+  const { publicClient, walletClient, account } = getFundingClients();
+  const swapWalletClient = walletClient ?? walletContext.walletClient;
+  const swapAccount = account ?? walletContext.account;
+
+  const txHash = await swapWalletClient.writeContract({
+    address: SWAP_ROUTER,
+    abi: swapRouterAbi,
+    functionName: "exactInputSingle",
+    args: [
+      {
+        tokenIn: WETH,
+        tokenOut: USDC,
+        fee: FEE_TIER,
+        recipient: swapAccount.address,
+        amountIn: ethAmount,
+        amountOutMinimum: minUsdcOut,
+        sqrtPriceLimitX96: 0n,
+      },
+    ],
+    value: ethAmount,
+    ...(fees ? { gas: fees.gas, maxFeePerGas: fees.maxFeePerGas, maxPriorityFeePerGas: fees.maxPriorityFeePerGas } : {}),
+  });
+
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+  if (receipt.status === "reverted") {
+    throw new Error("ETH→USDC swap reverted");
+  }
+
+  // Read USDC balance after swap to report actual amount
+  const usdcBal = await getUsdcBalance(swapAccount.address);
+  return { txHash, usdcReceived: formatUnits(usdcBal, 6) };
+}
+
+/**
+ * Swap USDC → ETH via Uniswap V3 on Base.
+ * Approves USDC (if needed), then multicalls [exactInputSingle, unwrapWETH9].
+ */
+export async function swapUsdcToEth(
+  usdcAmount: bigint,
+  minEthOut: bigint,
+): Promise<{ txHash: Hex; ethReceived: string }> {
+  const walletContext = requireWallet();
+  const { publicClient, walletClient, account } = getFundingClients();
+  const swapWalletClient = walletClient ?? walletContext.walletClient;
+  const swapAccount = account ?? walletContext.account;
+
+  // Check and set USDC allowance
+  const allowance = (await publicClient.readContract({
+    address: USDC,
+    abi: erc20Abi,
+    functionName: "allowance",
+    args: [swapAccount.address, SWAP_ROUTER],
+  })) as bigint;
+
+  if (allowance < usdcAmount) {
+    const approveTx = await swapWalletClient.writeContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: "approve",
+      args: [SWAP_ROUTER, usdcAmount],
+    });
+    await publicClient.waitForTransactionReceipt({ hash: approveTx });
+  }
+
+  // Encode exactInputSingle: USDC → WETH, recipient = SWAP_ROUTER (so it holds WETH)
+  const swapData = encodeFunctionData({
+    abi: swapRouterAbi,
+    functionName: "exactInputSingle",
+    args: [
+      {
+        tokenIn: USDC,
+        tokenOut: WETH,
+        fee: FEE_TIER,
+        recipient: SWAP_ROUTER, // Router holds WETH temporarily
+        amountIn: usdcAmount,
+        amountOutMinimum: minEthOut,
+        sqrtPriceLimitX96: 0n,
+      },
+    ],
+  });
+
+  // Encode unwrapWETH9: router converts WETH → ETH and sends to user
+  const unwrapData = encodeFunctionData({
+    abi: swapRouterAbi,
+    functionName: "unwrapWETH9",
+    args: [minEthOut, swapAccount.address],
+  });
+
+  const deadline = BigInt(Math.floor(Date.now() / 1000) + 300); // 5 min
+
+  const txHash = await swapWalletClient.writeContract({
+    address: SWAP_ROUTER,
+    abi: swapRouterAbi,
+    functionName: "multicall",
+    args: [deadline, [swapData, unwrapData]],
+  });
+
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+  if (receipt.status === "reverted") {
+    throw new Error("USDC→ETH swap reverted");
+  }
+
+  const ethBal = await publicClient.getBalance({ address: swapAccount.address });
+  return { txHash, ethReceived: formatEther(ethBal) };
+}

@@ -1,0 +1,265 @@
+export type ErrorCategory = "setup" | "transient" | "fatal" | "llm";
+
+export interface ClassifiedError {
+  category: ErrorCategory;
+  userMessage: string;
+  recovery: string;
+}
+
+const patterns: Array<{
+  test: (msg: string) => boolean;
+  classify: (msg: string) => ClassifiedError;
+}> = [
+  {
+    test: (m) => m.includes("payment outcome is unknown"),
+    classify: (msg) => ({ category: "fatal", userMessage: msg, recovery: "Check the service job/payment result before manually resuming. Do not repeat an unknown paid request." }),
+  },
+  {
+    test: (m) => m.includes("Policy denied:"),
+    classify: (msg) => ({
+      category: "setup",
+      userMessage: msg,
+      recovery: "Review `apow policy show` and the requested operation. Keep policy enforcement enabled.",
+    }),
+  },
+  {
+    test: (m) => m.includes("Not your miner"),
+    classify: () => ({
+      category: "fatal",
+      userMessage: "Miner NFT is not owned by your wallet",
+      recovery: "Check token ID or verify ownership on Basescan",
+    }),
+  },
+  {
+    test: (m) => m.includes("Supply exhausted"),
+    classify: () => ({
+      category: "fatal",
+      userMessage: "All 18.9M mineable AGENT have been mined",
+      recovery: "Mining is complete. Trade AGENT on Uniswap.",
+    }),
+  },
+  {
+    test: (m) => m.includes("No contracts"),
+    classify: () => ({
+      category: "fatal",
+      userMessage: "Smart contract wallets cannot mine",
+      recovery: "Use a regular (EOA) wallet",
+    }),
+  },
+  {
+    test: (m) => m.includes("Sold out") || m.includes("Max supply"),
+    classify: () => ({
+      category: "fatal",
+      userMessage: "All 10,000 mining rigs have been minted",
+      recovery: "Buy a miner NFT on a secondary marketplace",
+    }),
+  },
+  {
+    test: (m) => m.includes("One mine per block"),
+    classify: () => ({
+      category: "transient",
+      userMessage: "One mine per block — waiting for next block",
+      recovery: "",
+    }),
+  },
+  {
+    test: (m) => m.includes("Expired"),
+    classify: () => ({
+      category: "transient",
+      userMessage: "SMHL challenge expired (20s window)",
+      recovery: "Retrying with a fresh challenge...",
+    }),
+  },
+  {
+    test: (m) => m.includes("fetch failed") || m.includes("ECONNREFUSED") || m.includes("ENOTFOUND"),
+    classify: (msg) => {
+      const target = msg.includes("11434") ? "Ollama" : msg.includes("anthropic") ? "Anthropic API" : msg.includes("openai") ? "OpenAI API" : "RPC";
+      return {
+        category: "transient",
+        userMessage: `Could not reach ${target}`,
+        recovery: "Check internet connection and RPC_URL in .env",
+      };
+    },
+  },
+  {
+    test: (m) =>
+      /\b40[13]\b/.test(m)
+      && (m.includes("anthropic") || m.includes("openai") || m.toLowerCase().includes("unauthorized") || m.toLowerCase().includes("forbidden"))
+      && !m.toLowerCase().includes("codex")
+      && !m.toLowerCase().includes("claude")
+      && !m.toLowerCase().includes("clawrouter"),
+    classify: () => ({
+      category: "setup",
+      userMessage: "LLM API key is invalid or expired",
+      recovery: "Run `apow setup` to configure a valid key",
+    }),
+  },
+  {
+    test: (m) =>
+      m.includes("SMHL solve failed with")
+      || m.includes("Failed to authenticate")
+      || m.includes("Request not allowed")
+      || m.includes("country, region, or territory not supported"),
+    classify: (msg) => {
+      const lower = msg.toLowerCase();
+      const provider = lower.includes("codex") ? "codex"
+        : lower.includes("claude") ? "claude-code"
+        : lower.includes("clawrouter") ? "clawrouter"
+        : "your configured LLM";
+      return {
+        category: "setup",
+        userMessage: `${provider} is not usable for minting`,
+        recovery: provider === "clawrouter"
+          ? "Check Base USDC balance and x402 connectivity, or switch to another LLM provider in `apow setup`"
+          : "Authenticate that CLI/provider, or switch to LLM_PROVIDER=clawrouter in `apow setup`",
+      };
+    },
+  },
+  {
+    test: (m) => m.includes("x402 GPU payment failed: insufficient USDC balance"),
+    classify: () => ({
+      category: "setup",
+      userMessage: "Insufficient USDC for x402 GPU grinding",
+      recovery: "Send USDC to your wallet on Base, or set USE_X402_GRIND=false to disable remote grinding",
+    }),
+  },
+  {
+    test: (m) => m.includes("x402 GPU payment failed: EVM simulation failed"),
+    classify: () => ({
+      category: "setup",
+      userMessage: "x402 GPU payment simulation failed",
+      recovery: "Check wallet state and USDC balance, then retry",
+    }),
+  },
+  {
+    test: (m) => m.includes("x402 GPU payment failed") || m.includes("No matching payment requirements"),
+    classify: () => ({
+      category: "transient" as ErrorCategory,
+      userMessage: "x402 GPU payment failed",
+      recovery: "Retrying with a fresh payment session...",
+    }),
+  },
+  {
+    test: (m) => m.includes("x402 payment failed — insufficient USDC balance on Base"),
+    classify: () => ({
+      category: "setup",
+      userMessage: "Insufficient USDC for QuickNode x402 RPC",
+      recovery: "Send USDC to your wallet on Base, or set RPC_URL in .env to use your own RPC",
+    }),
+  },
+  {
+    test: (m) => /\b402\b/.test(m) || m.includes("QuickNode x402") || (m.toLowerCase().includes("insufficient") && m.toLowerCase().includes("usdc")),
+    classify: () => ({
+      category: "transient",
+      userMessage: "QuickNode x402 credit purchase failed — check USDC balance on Base",
+      recovery: "Send at least 2.00 USDC to your wallet on Base for x402 starting balance, or set RPC_URL in .env to use a custom RPC",
+    }),
+  },
+  {
+    test: (m) => m.includes("Not enough ETH for gas") || m.toLowerCase().includes("insufficient funds"),
+    classify: () => ({
+      category: "setup",
+      userMessage: "Not enough ETH for gas",
+      recovery: "Send ETH to your wallet on Base, or run `apow fund` to top up gas before mining again",
+    }),
+  },
+  {
+    test: (m) => m.includes("SMHL solve failed"),
+    classify: () => ({
+      category: "llm",
+      userMessage: "LLM failed to solve the SMHL challenge after 5 attempts",
+      recovery: "Try a different model (gpt-4o-mini recommended) or check your LLM API key",
+    }),
+  },
+  {
+    test: (m) => m.includes("EADDRINUSE") && m.includes("8402"),
+    classify: () => ({
+      category: "setup",
+      userMessage: "The local x402 LLM service port 8402 is already in use",
+      recovery: "Set CLAWROUTER_PORT in .env to use a different port",
+    }),
+  },
+  {
+    test: (m) => m.toLowerCase().includes("insufficient") && m.toLowerCase().includes("clawrouter"),
+    classify: () => ({
+      category: "setup",
+      userMessage: "Insufficient USDC for the x402 LLM payment",
+      recovery: "Send USDC to your wallet on Base",
+    }),
+  },
+  {
+    test: (m) => m.includes("GrindProxy") && /\b502\b/.test(m),
+    classify: () => ({
+      category: "transient" as ErrorCategory,
+      userMessage: "Remote GPU backend unavailable",
+      recovery: "GrindProxy will retry automatically. Local grinders continue racing.",
+    }),
+  },
+  {
+    test: (m) => m.includes("Remote GPU grind timed out") || (m.includes("GrindProxy") && /\b504\b/.test(m)),
+    classify: () => ({
+      category: "transient" as ErrorCategory,
+      userMessage: "Remote GPU grind timed out",
+      recovery: "Retrying with a fresh remote grind request...",
+    }),
+  },
+  {
+    test: (m) => m.includes("Remote GPU grind request failed"),
+    classify: () => ({
+      category: "transient" as ErrorCategory,
+      userMessage: "Remote GPU grind request failed",
+      recovery: "Retrying with a fresh remote grind request...",
+    }),
+  },
+  {
+    test: (m) => m.includes("INSUFFICIENT_OUTPUT_AMOUNT") || m.includes("Too little received"),
+    classify: () => ({
+      category: "transient",
+      userMessage: "Uniswap swap failed — slippage exceeded",
+      recovery: "Price moved during swap. Try again — the auto-split will recalculate.",
+    }),
+  },
+  {
+    test: (m) => m.includes("swap reverted"),
+    classify: () => ({
+      category: "transient",
+      userMessage: "Uniswap swap transaction reverted",
+      recovery: "Try again. If persistent, check ETH/USDC balances on Base.",
+    }),
+  },
+  {
+    test: (m) => m.includes("Squid") && (m.includes("route") || m.includes("deposit")),
+    classify: () => ({
+      category: "transient",
+      userMessage: "Bridge route temporarily unavailable",
+      recovery: "Wait a few minutes and try again",
+    }),
+  },
+];
+
+// Keyed RPC endpoints embed credentials in the URL path. Keep scheme+host so
+// errors stay debuggable, drop everything after — terminal output may be
+// public (streams, logs, screenshots).
+export function redactUrls(text: string): string {
+  return text.replace(/(https?:\/\/[^/\s"']+)[^\s"')]*/g, "$1/…");
+}
+
+export function errorText(error: unknown): string {
+  return redactUrls(error instanceof Error ? error.message : String(error));
+}
+
+export function classifyError(error: unknown): ClassifiedError {
+  const message = errorText(error);
+
+  for (const pattern of patterns) {
+    if (pattern.test(message)) {
+      return pattern.classify(message);
+    }
+  }
+
+  return {
+    category: "transient",
+    userMessage: message.length > 200 ? message.slice(0, 200) + "..." : message,
+    recovery: "",
+  };
+}

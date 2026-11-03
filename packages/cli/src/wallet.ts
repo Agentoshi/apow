@@ -1,0 +1,114 @@
+import { createPublicClient, createWalletClient, http, type Transport } from "viem";
+import { Attribution } from "ox/erc8021";
+
+import { config } from "./config";
+import { getSigner, resetSigner } from "./signer/local-keystore";
+import { createX402Transport } from "./x402";
+
+export const DATA_SUFFIX = Attribution.toDataSuffix({ codes: ["bc_6wfeb1kd"] });
+
+function getTransport(): Transport {
+  const signer = getSigner();
+  if (config.useX402 && signer) {
+    return createX402Transport(signer.account);
+  }
+  return http(config.rpcUrl);
+}
+
+let transport = getTransport();
+
+export let publicClient = createPublicClient({
+  chain: config.chain,
+  transport,
+});
+
+export let account = getSigner()?.account ?? null;
+
+export let walletClient = account
+  ? createWalletClient({
+      account,
+      chain: config.chain,
+      transport,
+      dataSuffix: DATA_SUFFIX,
+    })
+  : null;
+
+let bootstrapPublicClient = createPublicClient({
+  chain: config.chain,
+  transport: getBootstrapTransport(),
+});
+
+let bootstrapAccount = getSigner()?.account ?? null;
+
+let bootstrapWalletClient = bootstrapAccount
+  ? createWalletClient({
+      account: bootstrapAccount,
+      chain: config.chain,
+      transport: getBootstrapTransport(),
+      dataSuffix: DATA_SUFFIX,
+    })
+  : null;
+
+function shouldUseBootstrapFundingClients(): boolean {
+  return config.chainName === "base";
+}
+
+function getBootstrapTransport(): Transport {
+  return config.chainName === "base" ? http(config.rpcUrl || "https://base.publicnode.com") : transport;
+}
+
+/** Reinitialize clients after config changes (e.g., x402 fallback). */
+export function reinitClients(): void {
+  resetSigner();
+  transport = getTransport();
+  account = getSigner()?.account ?? null;
+  publicClient = createPublicClient({ chain: config.chain, transport });
+  walletClient = account
+    ? createWalletClient({
+        account,
+        chain: config.chain,
+        transport,
+        dataSuffix: DATA_SUFFIX,
+      })
+    : null;
+
+  bootstrapPublicClient = createPublicClient({
+    chain: config.chain,
+    transport: getBootstrapTransport(),
+  });
+  bootstrapAccount = getSigner()?.account ?? null;
+  bootstrapWalletClient = bootstrapAccount
+    ? createWalletClient({
+        account: bootstrapAccount,
+        chain: config.chain,
+        transport: getBootstrapTransport(),
+        dataSuffix: DATA_SUFFIX,
+      })
+    : null;
+}
+
+export function getFundingClients() {
+  if (shouldUseBootstrapFundingClients()) {
+    return {
+      publicClient: bootstrapPublicClient,
+      account: bootstrapAccount,
+      walletClient: bootstrapWalletClient,
+    };
+  }
+
+  return { publicClient, account, walletClient };
+}
+
+export function requireWallet() {
+  if (!account || !walletClient) {
+    throw new Error("Wallet is not configured. Set KEYSTORE_PATH to an encrypted keystore and unlock it with KEYSTORE_PASSWORD.");
+  }
+
+  return { account, walletClient };
+}
+
+export async function getEthBalance(): Promise<bigint> {
+  const { publicClient: balanceClient, account: balanceAccount } = getFundingClients();
+  if (!balanceAccount) return 0n;
+  return balanceClient.getBalance({ address: balanceAccount.address });
+}

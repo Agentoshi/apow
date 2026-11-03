@@ -1,0 +1,38 @@
+# Env
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+dist/
+
+# Dashboard
+dashboard/.next/
+dashboard/node_modules/
+
+# OS
+.DS_Store
+
+# IDE
+.claude/
+
+# Wallet key files
+wallet-*.txt
+
+# Test files (kept locally, not in repo)
+smhl-local-test.ts
+stress-test.ts
+testnet-llm-test.ts
+
+# Local tools are private by default; publish only the native grinder sources
+# required by `apow build-grinders`.
+local/*
+!local/gpu/
+!local/vast-setup.sh
+local/gpu/*
+!local/gpu/Makefile
+!local/gpu/grinder-cpu.c
+!local/gpu/grinder-cuda.cu
+!local/gpu/grinder.m
+!local/gpu/keccak.metal
