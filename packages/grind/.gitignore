@@ -1,0 +1,7 @@
+node_modules/
+.wrangler/
+.tmp-test/
+.dev.vars
+.env
+dist/
+.DS_Store
