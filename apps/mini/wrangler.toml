@@ -1,0 +1,28 @@
+name = "apow-mini"
+main = "src/worker/index.ts"
+compatibility_date = "2026-04-28"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+[vars]
+ENVIRONMENT = "production"
+APOW_BUILDER_CODE = "bc_6wfeb1kd"
+BASE_CHAIN_ID = "8453"
+BASE_PAY_TESTNET = "false"
+BASE_RPC_URL = "https://mainnet.base.org"
+ENABLE_LIVE_BASE_PAY_VERIFICATION = "true"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "apow-mini"
+database_id = "<D1_DATABASE_ID>"
+
+# Required production secret:
+# wrangler secret put SESSION_SECRET
+#
+# Required for Solana funding routes:
+# wrangler secret put SQUID_INTEGRATOR_ID

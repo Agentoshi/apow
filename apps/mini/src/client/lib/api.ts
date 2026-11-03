@@ -1,0 +1,99 @@
+import type { DashboardState, FundingIntent, LedgerCategory, LedgerEntry, SourceAsset } from "../../shared/types";
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(path, {
+    credentials: "include",
+    headers: {
+      "content-type": "application/json",
+      ...(init?.headers ?? {}),
+    },
+    ...init,
+  });
+  const data = (await response.json().catch(() => ({}))) as T & { error?: string };
+  if (!response.ok) {
+    throw new Error(data.error ?? `Request failed: ${response.status}`);
+  }
+  return data;
+}
+
+export const api = {
+  nonce(address?: string, purpose: "signin" | "export" = "signin") {
+    return request<{ nonce: string }>("/api/auth/nonce", {
+      method: "POST",
+      body: JSON.stringify({ address, purpose }),
+    });
+  },
+  verify(message: string, signature: `0x${string}`) {
+    return request<{ user: DashboardState["user"] }>("/api/auth/verify", {
+      method: "POST",
+      body: JSON.stringify({ message, signature }),
+    });
+  },
+  logout() {
+    return request<{ ok: true }>("/api/auth/logout", { method: "POST" });
+  },
+  dashboard() {
+    return request<DashboardState>("/api/me");
+  },
+  createWallet(address: `0x${string}`, derivationPath: string) {
+    return request<{ wallet: NonNullable<DashboardState["wallet"]> }>("/api/wallets", {
+      method: "POST",
+      body: JSON.stringify({ address, derivationPath }),
+    });
+  },
+  confirmWalletBackup() {
+    return request<{ wallet: NonNullable<DashboardState["wallet"]> }>("/api/wallets/backup-confirmed", {
+      method: "POST",
+    });
+  },
+  pauseWallet() {
+    return request<{ wallet: NonNullable<DashboardState["wallet"]> }>("/api/wallets/pause", { method: "POST" });
+  },
+  resumeWallet() {
+    return request<{ wallet: NonNullable<DashboardState["wallet"]> }>("/api/wallets/resume", { method: "POST" });
+  },
+  createFundingIntent(sourceAsset: SourceAsset, amount: string) {
+    return request<{ intent: FundingIntent; basePay: { amount: string; to: string } | null }>("/api/funding/intents", {
+      method: "POST",
+      body: JSON.stringify({ sourceAsset, amount }),
+    });
+  },
+  verifyBasePay(intentId: string, paymentId: string) {
+    return request<{ intent: FundingIntent }>("/api/base-pay/verify", {
+      method: "POST",
+      body: JSON.stringify({ intentId, paymentId }),
+    });
+  },
+  confirmDirectFunding(intentId: string, txHash: `0x${string}`) {
+    return request<{ intent: FundingIntent }>("/api/funding/direct/confirm", {
+      method: "POST",
+      body: JSON.stringify({ intentId, txHash }),
+    });
+  },
+  startMining() {
+    return request<{ job: NonNullable<DashboardState["miningJob"]> }>("/api/mining/start", {
+      method: "POST",
+    });
+  },
+  pauseMining() {
+    return request<{ job: NonNullable<DashboardState["miningJob"]> }>("/api/mining/pause", { method: "POST" });
+  },
+  ethUsd() {
+    return request<{ ethUsd: number; source: string }>("/api/prices/eth-usd");
+  },
+  recordMiningEvent(event: {
+    category: LedgerCategory;
+    asset: LedgerEntry["asset"];
+    amount: string;
+    status: LedgerEntry["status"];
+    txHash?: `0x${string}` | null;
+    description: string;
+    jobStatus?: "active" | "paused" | "error";
+    lastError?: string | null;
+  }) {
+    return request<{ ledgerEntry: LedgerEntry }>("/api/mining/events", {
+      method: "POST",
+      body: JSON.stringify(event),
+    });
+  },
+};
