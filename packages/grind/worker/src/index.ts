@@ -684,6 +684,35 @@ async function releaseRunpodCapacityLease(env: Env, lease: RunpodCapacityLease |
   }
 }
 
+// A freshly resumed endpoint can report ENDPOINT_PAUSED for a few seconds
+// while RunPod applies the new workersMax. Retry that one conflict only.
+const RUNPOD_RESUME_SETTLE_MS = 15_000;
+const RUNPOD_RESUME_POLL_MS = 3_000;
+
+async function dispatchRunpodRunsync(
+  env: Env,
+  input: { challenge: string; target: string; address: string },
+  signal: AbortSignal,
+): Promise<Response> {
+  const settleDeadline = Date.now() + RUNPOD_RESUME_SETTLE_MS;
+  while (true) {
+    const resp = await fetch(`${env.RUNPOD_ENDPOINT}/runsync`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${env.RUNPOD_API_KEY}`,
+      },
+      body: JSON.stringify({ input }),
+      signal,
+    });
+    if (resp.status !== 409 || Date.now() >= settleDeadline) return resp;
+    const body = await resp.clone().text().catch(() => "");
+    if (!body.includes("ENDPOINT_PAUSED")) return resp;
+    logGrindEvent({ event: "runpod_resume_settling" });
+    await new Promise((resolve) => setTimeout(resolve, RUNPOD_RESUME_POLL_MS));
+  }
+}
+
 async function purgeRunpodQueue(env: Env): Promise<void> {
   const endpointId = extractRunpodEndpointId(env.RUNPOD_ENDPOINT);
   if (!endpointId) {
@@ -1684,17 +1713,7 @@ app.post("/grind", async (c) => {
   const computeStart = Date.now();
   let resp: Response;
   try {
-    resp = await fetch(`${c.env.RUNPOD_ENDPOINT}/runsync`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${c.env.RUNPOD_API_KEY}`,
-      },
-      body: JSON.stringify({
-        input: { challenge, target: targetHex, address },
-      }),
-      signal: controller.signal,
-    });
+    resp = await dispatchRunpodRunsync(c.env, { challenge, target: targetHex, address }, controller.signal);
   } catch (err) {
     clearTimeout(timeout);
     const computeTimeMs = Date.now() - computeStart;
