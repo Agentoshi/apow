@@ -157,7 +157,7 @@ forge test                                           # fork tests self-skip with
 forge test --match-path test/LPVaultFork.t.sol --fork-url https://mainnet.base.org   # optional, read-only
 ```
 
-Needs Foundry (`forge`) on PATH. If it is missing, stop and report it; installing it is the user's call. Docs are Markdown in `docs/`; after editing them, run the website `sync-docs` and build steps above so the site picks them up. Cannot run locally: `script/*.s.sol` with `--broadcast` deploys or mutates mainnet. Never run them.
+Needs Foundry: `forge` on PATH, or `~/.foundry/bin/forge` (install with foundryup). Expected result: 230 of 231 pass. `testSimulation_GasProfile_Era0` fails its 200k gas budget (first-ever `mine()` measures about 227k with cold storage); the deployed contracts are immutable, so treat that one failure as known and flag any other. Docs are Markdown in `docs/`; after editing them, run the website `sync-docs` and build steps above so the site picks them up. Cannot run locally: `script/*.s.sol` with `--broadcast` deploys or mutates mainnet. Never run them.
 
 ### packages/grind (GPU grinder + GrindProxy Worker)
 
