@@ -16,11 +16,12 @@
   "author": "Agentoshi",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Agentoshi/apow-cli.git"
+    "url": "git+https://github.com/Agentoshi/apow.git",
+    "directory": "packages/cli"
   },
   "homepage": "https://apow.io",
   "bugs": {
-    "url": "https://github.com/Agentoshi/apow-cli/issues"
+    "url": "https://github.com/Agentoshi/apow/issues"
   },
   "bin": {
     "apow": "dist/index.js",

@@ -30,11 +30,9 @@ launch() {
       exec python3 -m http.server "$port" --bind 127.0.0.1 --directory "$repo/apps/website/out" ;;
     grind)
       cd "$repo/packages/grind/worker"
-      mkdir -p "$state/grind-d1" "$state/grind-shim"
+      mkdir -p "$state/grind-d1"
       npx wrangler d1 migrations apply ECONOMICS_DB --local --persist-to "$state/grind-d1" > "$state/run/grind-migrate.log" 2>&1
-      # src/index.ts has named exports that workerd rejects; the shim re-exports only the handler.
-      printf 'import worker from "%s/packages/grind/worker/src/index.ts";\nexport default worker;\n' "$repo" > "$state/grind-shim/entry.ts"
-      exec npx wrangler dev "$state/grind-shim/entry.ts" --ip 127.0.0.1 --port "$port" --persist-to "$state/grind-d1" ;;
+      exec npx wrangler dev --ip 127.0.0.1 --port "$port" --persist-to "$state/grind-d1" ;;
   esac
 }
 

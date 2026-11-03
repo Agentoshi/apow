@@ -175,7 +175,7 @@ curl -s -w ' HTTP %{http_code}\n' -X POST http://127.0.0.1:8794/grind -H 'conten
 python3 -m py_compile $REPO/packages/grind/gpu/handler.py && find $REPO/packages/grind/gpu -name __pycache__ -exec rm -rf {} +
 ```
 
-`serve.sh` starts the Worker through a scratch entry file that re-exports only the default handler, because `src/index.ts` also has named exports (`RUNPOD_4090_PRO_FLEX_COST_PER_HOUR_USD` and helpers used by tests) and workerd refuses to start with them: `Incorrect type for map entry ... not of type 'function or ExportedHandler'`. Plain `npx wrangler dev` in this folder fails with that error. Local `wrangler dev` never fires the every-minute cron, so the RunPod cleanup does not run. Cannot run locally: a paid `/grind` (x402 USDC settlement plus a RunPod GPU job), the cron cleanup against RunPod, `npm run economics` and `npm run reconcile` (need production D1 and the RunPod API key), and the CUDA grinder (needs `nvcc` and an NVIDIA GPU). The CLI's CPU and Metal grinders in packages/cli are the safest local proof of the grinding algorithm.
+The Worker entry is `src/worker.ts`, which re-exports only the default handler; `src/index.ts` keeps named exports for tests, which workerd rejects as an entry. Local `wrangler dev` never fires the every-minute cron, so the RunPod cleanup does not run. Cannot run locally: a paid `/grind` (x402 USDC settlement plus a RunPod GPU job), the cron cleanup against RunPod, `npm run economics` and `npm run reconcile` (need production D1 and the RunPod API key), and the CUDA grinder (needs `nvcc` and an NVIDIA GPU). The CLI's CPU and Metal grinders in packages/cli are the safest local proof of the grinding algorithm.
 
 ## Evidence standard
 

@@ -61,7 +61,7 @@ export const LP_FEATURES = [
 
 export const LINKS = {
   docs: "/docs",
-  github: "https://github.com/Agentoshi/apow-cli",
+  github: "https://github.com/Agentoshi/apow",
   twitter: "https://x.com/agenticpow",
   basescan: "https://basescan.org/token/0x12577CF0D8a07363224D6909c54C056A183e13b3",
 } as const;
