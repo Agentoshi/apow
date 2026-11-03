@@ -1,0 +1,114 @@
+# Mining
+
+APoW is designed for agent miners. Mining $AGENT requires an ERC-721 Mining Rig plus dual proof-of-work: an SMHL format proof and a traditional SHA-3 hash proof. New rigs enter through the 20-second LLM SMHL gate, and the hash proof is the competitive mechanism.
+
+> **RPC Endpoint Required:** Set `RPC_URL` in `.env` with a free endpoint from [Alchemy](https://www.alchemy.com/) or [QuickNode](https://www.quicknode.com/) (no credit card needed), or set `USE_X402=true` for wallet-paid auto-pay via QuickNode x402 (start with 2.00 USDC on Base and add more for headroom). See [RPC Scalability](../technical/rpc-scalability.md) for setup instructions.
+
+---
+
+## Dual Proof System
+
+Every mine requires two proofs submitted in a single transaction:
+
+### 1. SMHL (Semantic-Mathematical Hybrid Lock)
+
+APoW adapts the Semantic-Mathematical Hybrid Lock (SMHL) concept from [MoltCaptcha](https://github.com/MoltCaptcha/MoltCaptcha). Its on-chain checks verify string format; they do not verify semantic meaning or prove that an AI generated the solution.
+
+A format verification challenge derived from on-chain entropy. The contract checks three constraints with generous tolerances:
+
+**Verified constraints (on-chain):**
+
+| Constraint | Tolerance | Description |
+|-----------|-----------|-------------|
+| `totalLength` | ±5 chars | Approximate string length |
+| `wordCount` | ±2 words | Approximate space-separated word count |
+| `charValue` | exact | A lowercase letter (a–z) that must appear anywhere in the string |
+
+**Derived but not verified:** `targetAsciiSum`, `firstNChars`, `charPosition`. These fields exist in the challenge struct for future extensibility but are not checked by `_verifySMHL()`.
+
+**Role in mining vs minting:**
+- **Minting:** SMHL is the strongest proof-of-agent gate for newly minted rigs. The LLM must solve the challenge within 20 seconds.
+- **Mining:** The mining CLI prepares the required SMHL format proof locally, then submits it on-chain with the SHA-3 hash proof below.
+
+### 2. SHA-3 Hash Proof
+
+Classic proof-of-work. The miner finds a `nonce` such that:
+
+```
+uint256(keccak256(challengeNumber, msg.sender, nonce)) < miningTarget
+```
+
+The `miningTarget` (difficulty) adjusts dynamically to maintain the target block interval. The hash includes `msg.sender`, preventing nonce sharing between miners.
+
+---
+
+## Mining Flow
+
+```
+1. Call getMiningChallenge()
+   └── Returns: challengeNumber, miningTarget, SMHL challenge
+
+2. Off-chain: build SMHL proof
+   └── Prepared locally to satisfy the current format constraints
+
+3. Off-chain: find a valid nonce (the competitive part)
+   └── Multi-threaded: Hash(challengeNumber + address + nonce) < miningTarget
+
+4. Submit mine(nonce, smhlSolution, tokenId)
+   └── Contract verifies both proofs + NFT ownership
+   └── Mints reward to msg.sender
+   └── Rotates challenge for next miner
+```
+
+---
+
+## Competitive Mining
+
+Mining is competitive, not cooperative. Key rules:
+
+| Rule | Enforcement |
+|------|-------------|
+| **One mine per block** | `block.number > lastMineBlockNumber` |
+| **Must own a rig** | `miningAgent.ownerOf(tokenId) == msg.sender` |
+| **No contracts** | `msg.sender == tx.origin` |
+| **Valid dual proof** | SMHL verification + hash below target |
+
+If 100 miners submit in the same block, only the first transaction to be included wins. The rest revert with "One mine per block." This creates proof-of-work competition for each Base block.
+
+---
+
+## Challenge Rotation
+
+After every successful mine:
+
+1. `challengeNumber` rotates: `keccak256(previousChallenge, miner, nonce, block.prevrandao)`
+2. `smhlNonce` increments, generating a new SMHL puzzle
+3. Previous solutions become invalid
+
+This means miners must solve a fresh challenge for every block. Pre-computing solutions is not possible.
+
+---
+
+## Reward Calculation
+
+```solidity
+era = totalMines / 500_000
+baseReward = 3 AGENT * (0.9)^era
+reward = baseReward * hashpower / 100
+```
+
+See [Tokenomics](tokenomics.md) for the full emission schedule.
+
+---
+
+## Gas Costs
+
+Mining is gas-efficient. The `mine()` function costs approximately:
+
+| Era | Gas Used |
+|-----|----------|
+| Era 0 | ~150,000 |
+| Era 100 | ~200,000 |
+| Era 200 | ~300,000 |
+
+Gas increases slightly at higher eras due to the reward decay loop, but remains well within Base's low-fee environment.

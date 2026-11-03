@@ -1,0 +1,40 @@
+# Env
+.env
+.env.*
+
+# Project-local config (not for public repo)
+.claude/
+docs/DEPLOY_PLAN.md
+SPEC.md
+
+# Foundry
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+
+# Testnet helpers (kept locally, not in repo)
+contracts/*.js
+contracts/*.sh
+contracts/*.txt
+contracts/*.log
+contracts/deployed-addresses.json
+contracts/package.json
+contracts/package-lock.json
+
+# Untracked smoke/testnet scripts (kept locally)
+contracts/script/DeploySimple.s.sol
+contracts/script/DeployTestnet.s.sol
+contracts/script/TestnetMine.s.sol
+contracts/script/TestnetMint.s.sol
+contracts/script/TestnetMintV2.s.sol
+contracts/script/SmokeTest.s.sol
+contracts/script/SmokeTestFull.s.sol
+contracts/src/smoke/Fake*.sol
+contracts/src/smoke/Smoke*.sol
+docs/MAINNET_MASTER_PLAN.md
