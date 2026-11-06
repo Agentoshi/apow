@@ -2,6 +2,8 @@
 
 Research checked **6 October 2026**. These instructions distinguish documented platform features from APoW test reports. A cloud VM, a saved conversation, and a background task each have different lifetimes.
 
+ChatGPT dots and Claude Duet profiles added **6 November 2026** from current official documentation. Their APoW end-to-end tests are pending. The other profiles retain their research date above.
+
 ## Start with Easy Mode
 
 Easy Mode uses wallet-paid RPC, an LLM for rig minting, and remote GPU grinding. The runner still detects rigs, obtains work, signs transactions, and checks receipts. Running that runner does not require a local GPU. Do not rent a VPS or switch to local CPU mining as part of normal setup.
@@ -47,6 +49,20 @@ Instruction: first test shell, secret injection, and runner lifetime. Use Easy M
 Wajo presents Fo as a personal assistant with human support. Its public site does not document an unrestricted shell, miner daemon lifetime, or CLI secret injection. [Wajo](https://wajo.ai/).
 
 Instruction: check capabilities before installation. Never send wallet secrets to the assistant or a human support operator. Use Easy Mode only on a supported, approved runner. If the workspace cannot run it, report that limit and use the managed-service flow when available. Browser automation capability alone is not mining compatibility.
+
+### ChatGPT dots
+
+A dot has a cloud computer and can start Work or Codex tasks on an owner-connected computer. Local work depends on that computer staying online with ChatGPT open. The private browser sign-in flow sends credentials to the browser, not to the conversation. These features do not establish a CLI wallet-unlock interface. [Computers and apps](https://learn.chatgpt.com/docs/dots/computers-and-apps).
+
+Instruction: identify where the runner will execute. Prefer an already approved connected computer with a host-local secret manager when the cloud runtime has no supported unlock method. Run Easy Mode there and keep wallet secrets on that host. For delegated Codex Cloud work, distinguish direct environment secrets from network placeholders; a placeholder is not a keystore password. Do not extract a browser password, cookie, or app token. [Credential controls](https://learn.chatgpt.com/docs/enterprise/dots-security).
+
+Before funding, prove fresh-process recovery and confirm what happens when the task ends or the connected computer goes offline. If secure signing or platform permission is missing, stop at read-only monitoring. A dot's persistent conversation does not prove that its delegated miner remains running. **APoW status: candidate for owner-runner testing; no complete agent-specific pass recorded.**
+
+### Claude Duet
+
+Claude Duet runs on a cloud computer. Anthropic keeps browser credentials and connected-app tokens outside the agent's work environment; connector requests can use substituted credentials. Its payment approvals still apply to unattended work. These documented mechanisms do not establish that a Node process can unlock an encrypted wallet. [Security and approvals](https://claude.com/resources/articles/claude-duet-safety-privacy-and-security).
+
+Instruction: test shell access, persistent files, a supported wallet-unlock path, and runner lifetime before creating a funding handoff. Never treat a connector token placeholder or browser sign-in form as a keystore password. Use Easy Mode only if the platform supports the signing and payment workflow. An existing owner-controlled runner is an alternative only when a supported, authorized tool can control it; do not assume Duet has a local-computer connector or bypass its approval requirements. If those checks fail, offer read-only monitoring and stop before funding. **APoW status: direct signing unverified; do not advertise unattended mining support.**
 
 ### OpenClaw
 
