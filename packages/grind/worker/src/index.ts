@@ -300,7 +300,11 @@ type EconomicsLedgerStatus = {
 
 let cachedRunpodTelemetry: { expiresAt: number; value: RunpodTelemetry } | null = null;
 const RUNPOD_TELEMETRY_CACHE_MS = 5_000;
+// Status polls back off so a full-timeout job stays inside the Worker
+// subrequest budget, leaving room for x402 settlement after the grind.
 const RUNPOD_POLL_INTERVAL_MS = 10_000;
+const RUNPOD_POLL_BACKOFF_MS = 5_000;
+const RUNPOD_POLL_MAX_INTERVAL_MS = 30_000;
 
 function parseEnvNumber(raw: string | undefined, fallback: number): number {
   if (!raw) return fallback;
@@ -746,8 +750,10 @@ async function waitForRunpodTerminalJob(
   signal: AbortSignal,
 ): Promise<RunpodJobResponse> {
   let current = initial;
+  let intervalMs = RUNPOD_POLL_INTERVAL_MS;
   while (isRunpodPendingStatus(current.status) && current.id && Date.now() < deadlineMs) {
-    await new Promise((resolve) => setTimeout(resolve, RUNPOD_POLL_INTERVAL_MS));
+    await new Promise((resolve) => setTimeout(resolve, Math.min(intervalMs, Math.max(0, deadlineMs - Date.now()))));
+    intervalMs = Math.min(intervalMs + RUNPOD_POLL_BACKOFF_MS, RUNPOD_POLL_MAX_INTERVAL_MS);
     current = await fetchRunpodJobStatus(env, current.id, signal);
   }
   return current;
@@ -1613,6 +1619,9 @@ app.use("/grind", async (c, next) => {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const signer = toFacilitatorEvmSigner(client as any);
+    // viem's default receipt polling spends subrequests fast; Base confirms in ~2s.
+    signer.waitForTransactionReceipt = (args) =>
+      client.waitForTransactionReceipt({ ...args, checkReplacement: false, pollingInterval: 2_000 });
     const facilitator = new x402Facilitator();
     registerExactEvmScheme(facilitator, {
       signer,
