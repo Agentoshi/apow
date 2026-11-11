@@ -30,3 +30,5 @@ Each file has an H1, one paragraph, then `Sub-features`, `How to get to it (user
 - [Mini app](./mini.md) covers SIWE sign-in, hosted wallet registration and the console landing page.
 - [Dashboard](./dashboard.md) covers network stats and the address watchlist.
 - [Website](./website.md) covers the landing page, docs navigation and the public skill file.
+
+- [Grinder](./grind.md) covers quotes, bounded cold-start retries, paid delivery and idle cleanup.

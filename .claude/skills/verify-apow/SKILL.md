@@ -165,7 +165,7 @@ Surface is the `grind.apow.io` x402 Worker (`worker/`) and the RunPod CUDA image
 
 ```bash
 cd $REPO/packages/grind/worker && npm ci --no-audit --no-fund
-npm run typecheck && npm test                        # 16 node:test tests
+npm run typecheck && npm test                        # 22 node:test tests
 $V/serve.sh start grind
 curl -s http://127.0.0.1:8794/health                 # ok true, price "$0.301", wallet_split.safe false
 curl -s http://127.0.0.1:8794/price                  # deterministic quote, price_usd 0.301

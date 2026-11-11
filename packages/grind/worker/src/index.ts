@@ -688,18 +688,20 @@ async function releaseRunpodCapacityLease(env: Env, lease: RunpodCapacityLease |
   }
 }
 
-// A freshly resumed endpoint can report ENDPOINT_PAUSED for a few seconds
-// while RunPod applies the new workersMax. Retry that one conflict only.
-const RUNPOD_RESUME_SETTLE_MS = 15_000;
-const RUNPOD_RESUME_POLL_MS = 3_000;
+// RunPod's job API can still report paused after the capacity update succeeds.
+// Allow 60 seconds to propagate, but retain the six-call subrequest budget.
+// Retry only an explicit rejection: a lost response may already contain a job.
+const RUNPOD_RESUME_SETTLE_MS = 60_000;
+const RUNPOD_RESUME_RETRY_DELAYS_MS = [3_000, 6_000, 12_000, 24_000, 15_000];
 
-async function dispatchRunpodRunsync(
+export async function dispatchRunpodRunsync(
   env: Env,
   input: { challenge: string; target: string; address: string },
   signal: AbortSignal,
 ): Promise<Response> {
   const settleDeadline = Date.now() + RUNPOD_RESUME_SETTLE_MS;
-  while (true) {
+  for (let attempt = 0; ; attempt++) {
+    signal.throwIfAborted();
     const resp = await fetch(`${env.RUNPOD_ENDPOINT}/runsync`, {
       method: "POST",
       headers: {
@@ -709,11 +711,12 @@ async function dispatchRunpodRunsync(
       body: JSON.stringify({ input }),
       signal,
     });
-    if (resp.status !== 409 || Date.now() >= settleDeadline) return resp;
-    const body = await resp.clone().text().catch(() => "");
-    if (!body.includes("ENDPOINT_PAUSED")) return resp;
-    logGrindEvent({ event: "runpod_resume_settling" });
-    await new Promise((resolve) => setTimeout(resolve, RUNPOD_RESUME_POLL_MS));
+    const retryDelay = RUNPOD_RESUME_RETRY_DELAYS_MS[attempt];
+    if (resp.status !== 409 || retryDelay === undefined || Date.now() >= settleDeadline) return resp;
+    const body = await resp.clone().json().catch(() => null) as { code?: string } | null;
+    if (body?.code !== "ENDPOINT_PAUSED") return resp;
+    logGrindEvent({ event: "runpod_resume_settling", attempt: attempt + 1 });
+    await new Promise((resolve) => setTimeout(resolve, Math.min(retryDelay, Math.max(0, settleDeadline - Date.now()))));
   }
 }
 
