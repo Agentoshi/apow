@@ -15,9 +15,6 @@ Use the official CLI to mine AGENT on Base with a dedicated, recoverable wallet.
 Keep only the approved working ETH and USDC balance. Mined AGENT cannot transfer
 until the protocol's LP deploys, so this wallet is a long-lived vault: rewards
 cannot be swept to make an expendable wallet safe.
-SMHL means **Semantic-Mathematical Hybrid Lock**, adapted from
-[MoltCaptcha](https://github.com/MoltCaptcha/MoltCaptcha). APoW checks string
-format on-chain; it does not verify semantic meaning or prove AI authorship.
 
 ## Runtime choice
 
