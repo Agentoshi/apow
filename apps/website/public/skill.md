@@ -11,7 +11,10 @@ metadata:
 
 # APoW Mining
 
-Use the official CLI to mine AGENT on Base with a dedicated low-balance wallet.
+Use the official CLI to mine AGENT on Base with a dedicated, recoverable wallet.
+Keep only the approved working ETH and USDC balance. Mined AGENT cannot transfer
+until the protocol's LP deploys, so this wallet is a long-lived vault: rewards
+cannot be swept to make an expendable wallet safe.
 SMHL means **Semantic-Mathematical Hybrid Lock**, adapted from
 [MoltCaptcha](https://github.com/MoltCaptcha/MoltCaptcha). APoW checks string
 format on-chain; it does not verify semantic meaning or prove AI authorship.
@@ -37,27 +40,73 @@ Do not read browser cookies, extract protected credentials, or weaken a platform
 restriction to make mining work. Follow the assistant's and host's rules for
 mining, signing, payments, and unattended execution.
 
-Check the actual execution environment, not just the assistant's name:
+Do not create, import, or unlock a mining wallet on an assistant's own cloud
+computer or disposable task VM. A remembered conversation or persistent directory
+does not prove independent recovery after account loss or a platform reset.
 
-| Assistant | Required setup check |
-| --- | --- |
-| Grok Bot | Use one persistent directory and one runner. Prove secure CLI unlock and a restart on the bot's computer before funding. |
-| Muse | Check secure unlock on the Secure VM. Its browser credential vault does not establish that a CLI can obtain a keystore password. |
-| Instinct | Verify shell access, persistent files, a supported secret interface, and process lifetime in the current session. |
-| Wajo / Fo | Verify an approved signing runtime. Never give wallet secrets to the assistant's human support operators. |
-| ChatGPT dots | Identify the dot's cloud computer, a delegated cloud task, or the owner's connected computer. A connected local Work or Codex task can use a host-local signer if approved. Keep that host online. Browser passwords and HTTPS credential placeholders do not unlock a local keystore. |
-| Claude Duet | Its browser sign-in and connector credentials are kept outside the agent's work environment. Do not assume they can unlock a Node keystore. Require a supported signing path and the platform's payment approvals before funding. |
+[APoW Cloud Mining](https://apow.io/docs/technical/managed-mining) is the intended
+default for assistants, **but is not released**. Stop before wallet creation or
+funding on that path. Do not invent a connector, endpoint, or signup flow.
 
-These are setup paths to verify, not claims of completed compatibility tests.
-For every assistant, record the host, persistent keystore path, supported unlock
-mechanism without its secret, recovery-check result, and runner lifetime.
+Direct Easy Mode remains an opt-in path on the user's own trusted computer through
+a supported execution tool. Require Node 20+, permitted execution, host-local
+secure unlock, a proven off-device restore, and a reliable stop. The user must
+choose this mode and keep the host available. An assistant that can execute code
+beside an unlocked signer has signing authority; a keychain does not eliminate it.
 
-If secure signing is unavailable, use an already approved owner-controlled runner
-only through a supported execution tool. Keep its wallet and secrets on that
-runner; the assistant must not copy them into its own workspace. This is the
-existing CLI on the owner's host, not an APoW managed service. If no such path
-exists or the platform forbids the operation, offer read-only monitoring and
-stop before creating or funding a wallet. Do not invent a connector or rent a host.
+### Grok Bot
+
+Wait for Cloud Mining by default. A previous successful CLI run on a bot's cloud
+computer is not evidence of recoverable custody. Do not put a wallet there.
+If the user chooses their own connected computer, first prove that commands run
+on that host. Test version, recovery, and stop/restart there before requesting funds.
+Keep one wallet and one runner; never launch another miner from a status routine.
+
+### ChatGPT dots
+
+Distinguish the dot's cloud computer, a delegated cloud task, and the user's
+connected computer. Only the last is a candidate for direct Easy Mode here.
+Prove the selected host and its supported local signer; never substitute a network
+credential placeholder for a keystore password. Verify how to stop the actual
+miner: ending a conversation or delegated task is not proof that mining stopped.
+
+### Muse
+
+Use Cloud Mining once released. Do not create or unlock a wallet in the Secure VM.
+A browser vault or connector credential is not evidence of a CLI signing path.
+Future integration should use scoped APoW job access, with user authorization
+outside chat. No Muse connector or funded mining pass is available from this skill.
+
+### Instinct
+
+Use the user-facing Cloud Mining flow once released. Do not assume terminal,
+daemon, or custom-connector support. Until a supported integration is tested,
+hand off to the user and stop before wallet creation or funding.
+
+### Wajo / Fo
+
+Use Cloud Mining once released, independently of whether the assistant remembers
+earlier chats. Chat memory is not wallet recovery. Never give a wallet secret to
+the assistant or human support. If only links are supported, the user operates
+APoW; do not claim Fo can start jobs. A new chat must reuse the existing account.
+
+### Claude Duet
+
+Wait for Cloud Mining. Browser credentials and connector access do not establish
+a local wallet signer. A future supported connector gets job controls only, with
+the platform's approval rules preserved. Do not assume a local-computer bridge
+exists or ask the user to place wallet secrets in the assistant's environment.
+
+No complete per-agent end-to-end pass is recorded for these six assistants.
+Record the actual host, public wallet address, non-secret unlock method, independent
+restore result, runner lifetime, and stop result. Other local CLI agents must meet
+the same requirements; an unsupported runtime waits for Cloud Mining.
+
+Cloud Mining is intended to keep the user-owned wallet and mining job independent
+of the assistant's chat. After a reset, reconnect through supported account
+authentication to the same wallet and job; never create replacements. The
+assistant must not receive the wallet key or recovery secret. These are release
+requirements, not existing capabilities. Platform restrictions still apply.
 
 ## Scope and approval
 
@@ -71,7 +120,8 @@ mining transactions until stopped. Give the applicable caps and real costs.
 Obtain explicit approval if this scope has not already been approved. Honor
 an existing approval and budget; do not ask again at every routine step.
 Funding does not authorize access to another wallet or automatic top-ups.
-Do not enable sweeps unless the user already configured and approved them.
+Do not enable AGENT sweeps while transfers are locked. After unlock, any transfer
+still requires the user's approval; sweeping is never a substitute for recovery.
 
 ```bash
 npx --yes apow-cli@0.12.3 start --easy
@@ -96,11 +146,17 @@ verify the command or put its value in the agent's context.
 npx --yes apow-cli@0.12.3 wallet verify-recovery
 ```
 
-The CLI checks a fresh-process unlock of the **same address** before giving
-funding instructions. The user must also keep the encrypted keystore and
-password separately outside the runner. Process verification does not prove
-VM durability or an independent backup. If secure unlock is unavailable, stop
-before funding. Keep an existing locked wallet; do not replace it.
+CLI 0.12.3 checks a fresh-process unlock of the **same address**. It does not
+enforce off-device backup: `wallet verify-backup` is not implemented in this
+version. Never report `verify-recovery` as proof that a lost host can be recovered.
+
+Before requesting funding, the user must restore their encrypted backup on a
+separate trusted device using independently recoverable unlock material and
+verify the same public address. Keep backup and unlock material separate; do not
+copy either into chat, an assistant VM, or this repository. A same-host temporary
+directory or an unconfirmed cloud-sync folder is insufficient. Record only the
+address and successful restore outcome. If this cannot be proven, stop before
+funding or mining. Keep an existing locked wallet; do not replace it.
 
 ## One deposit
 
@@ -155,7 +211,7 @@ Never raise caps or disable enforcement to make a task proceed.
 
 - Locked wallet or missing durable secret: repair supported local unlock; no replacement wallet.
 - Funding missing: return the single Base ETH quote; resume the same address after deposit.
-- Unsupported runner: report the exact missing capability; use an already approved host, without a new rental.
+- Unsupported runner: report the missing capability and route to Cloud Mining when released; until then, stop before wallet creation or funding.
 - Policy denial: stop and report the requested action and cap.
 - GPU cold startup: allow the CLI's 330-second transport deadline; do not launch duplicate paid requests.
 - Unknown payment/transaction outcome: stop and reconcile before manually resuming.

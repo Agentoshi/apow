@@ -1,119 +1,125 @@
 # Personal Assistant Mining Guide
 
-Research checked **6 October 2026**. These instructions distinguish documented platform features from APoW test reports. A cloud VM, a saved conversation, and a background task each have different lifetimes.
+APoW routing updated **10 November 2026**. These are support requirements and
+readiness checks, not claims that an assistant has passed funded mining tests.
+Use the [mining skill](../skill.md) for the pinned CLI and complete setup flow.
 
-ChatGPT dots and Claude Duet profiles added **6 November 2026** from current official documentation. Their APoW end-to-end tests are pending. The other profiles retain their research date above.
+## Choose the wallet host first
 
-## Start with Easy Mode
+All assistant mining uses **Easy Mode**, including x402 remote GPU grinding.
+The runner still signs payments and Base transactions. A cloud GPU service does
+not preserve a wallet or keep the signing runner alive.
 
-Easy Mode uses wallet-paid RPC, an LLM for rig minting, and remote GPU grinding. The runner still detects rigs, obtains work, signs transactions, and checks receipts. Running that runner does not require a local GPU. Do not rent a VPS or switch to local CPU mining as part of normal setup.
+**Cloud Mining is the intended default, but is not released.** The current web
+app uses a browser-held signer and needs an open tab; it is not the managed
+service. Until the managed service passes its release checks, do not create a
+wallet or request funds for that route. See [managed mining](managed-mining.md).
 
-Use the [mining skill](../skill.md) for the approved command and version. Deposit **Base ETH only** with the ETH-only CLI release. The CLI quotes the live rig fee, an ETH reserve, swap gas, and the USDC service budget, then converts the required ETH to USDC. The reserve is not the actual fee per transaction. Do not translate a dollar budget into a fixed ETH amount without a current quote.
+Never create, import, or unlock a mining wallet on an assistant's own cloud
+computer or disposable task VM. AGENT transfers are locked until the LP deploys,
+so a wallet can accumulate rewards that cannot be swept. It is a long-lived vault.
 
-The existing web mining app signs in the browser and needs its tab open. Fully managed background mining is under development; do not claim it is available. Once it passes its release checks, personal assistants will control the same managed jobs as the website, without storing wallet keys or managing servers. See [managed cloud mining](managed-mining.md).
+Direct Easy Mode is an explicit user choice on the user's own trusted computer.
+Require a supported execution tool, Node 20+, outbound HTTPS, host-local signing,
+a proven off-device restore, permitted execution, and a reliable stop mechanism.
+A secret manager prevents password disclosure in chat; it does not remove signing
+authority from an assistant that can run code beside the unlocked signer.
 
-## One setup, one wallet
+## Six assistant paths
 
-1. Check the runtime: Node 20 or later, outbound HTTPS, writable persistent storage, and a permitted background runner. Check the platform's current terms before running mining software.
-2. Use one isolated working directory and one dedicated wallet. Preserve its address across retries. If an existing wallet is locked, repair the unlock; do not create a replacement.
-3. Store the encrypted keystore on persistent storage. Store the password separately in a supported secret manager. For a headless runner, save a `KEYSTORE_PASSWORD_CMD` reference in its private `.env`. Do not save the password itself there or in chat, logs, shell history, screenshots, or agent memory.
-4. Run the CLI recovery check. It must unlock the same address in a fresh process. The user must also keep an independent encrypted-keystore backup and its password separately. A fresh-process check proves neither off-host backup nor survival of a VM rebuild.
-5. Obtain the single-asset funding quote. Give the user one complete address, chain, asset, and amount. Resume with that same wallet after deposit. Do not ask for a separate USDC deposit.
-6. Start exactly one runner for the wallet. Verify a process handle and recent logs. Report setup, funded, rig minted, runner started, and first confirmed mine as distinct states. A health response or a GPU request is not a confirmed mine.
-7. Keep enforcement and the agreed limits. Pause on an unknown payment or transaction result until it is reconciled. Do not enable CPU fallback, raise caps, top up, rent a host, or grant broader access without the user's instruction.
+| Assistant | Default when released | Direct Easy Mode today |
+| --- | --- | --- |
+| Grok Bot | Managed Cloud Mining | Candidate on the user's connected computer, after every check below; never on the bot's cloud computer |
+| ChatGPT dots | Managed Cloud Mining | Candidate on the user's connected computer, after every check; not in a dot or delegated cloud VM |
+| Muse | Managed Cloud Mining | No supported funded path established; do not create a wallet in its VM |
+| Instinct | Managed Cloud Mining through a tested browser or user handoff | No supported CLI path established |
+| Wajo / Fo | Managed Cloud Mining through a tested integration or user handoff | No supported wallet host established; chat memory is not recovery |
+| Claude Duet | Managed Cloud Mining through a tested connector or user handoff | No supported direct signing path established |
 
-The default x402 limits are not a complete USD loss cap: mint value, Base gas, swaps, exchange-rate changes, and hosting are separate. Set a finite test duration and reserve appropriate to the approved budget. Do not promise a hard dollar stop from an untested watcher.
-
-## Assistant profiles
+An integration is not live merely because an assistant supports APIs or connectors.
+MCP, HTTPS job access, and a user-facing dashboard are proposed entry points, not
+existing APoW endpoints. A link-only handoff means the user controls the job.
+Platform restrictions and payment approvals continue to apply.
 
 ### Grok Bot
 
-Grok Bot provides a persistent cloud computer with terminal, files, and browser. Bots belonging to the same user share that computer. Recreating the computer preserves its durable disk, but manually installed packages can need reinstalling. Background routines are available; they do not prove that an arbitrary miner daemon survives every lifecycle event. [Overview](https://docs.x.ai/grok-bot/overview), [computers](https://docs.x.ai/grok-bot/computers), [routines](https://docs.x.ai/grok-bot/skills-routines-and-automations).
-
-Instruction: use Easy Mode in a dedicated persistent directory; check for another running APoW process before starting. Save the package version and non-secret paths. Test unlock and process restart before funding. Use a routine to inspect status, not to launch duplicate miners. Reinstall the pinned CLI after a rebuild if needed.
-
-### Muse
-
-Meta documents a dedicated Secure VM and a separate Sentinel that checks external actions. Protected website credentials can be used without exposing them to Muse. Public documentation does not establish that this credential store can return a keystore password to a Node process. [Meta introduction](https://about.fb.com/news/2026/09/introducing-muse-personal-ai-agent/).
-
-Instruction: use Easy Mode. Do not assume a browser login vault is a CLI secret manager. Require a supported unlock method and persistent storage before offering a funding address. If unavailable, use an already approved host or wait for APoW managed jobs. A user-reported trial achieved confirmed local mines, but required steering, password recovery, and slow CPU work. Treat that as a bounded novelty test, not an unattended service guarantee.
-
-### Instinct
-
-Instinct describes an assistant reached by phone and computer; its public site does not specify durable Node services or a CLI secret interface. In a supplied test conversation, the assistant reported that its vault fills web forms but cannot unlock a miner, and that its workspace can be rebuilt. Those are observations from that session, not independently verified platform guarantees. [Instinct](https://instinct.com/).
-
-Instruction: first test shell, secret injection, and runner lifetime. Use Easy Mode when supported. An encrypted backup alone cannot make an unavailable signing runtime work. Do not redirect the user to local CPU mining or rent a server by default. For the planned managed service, request only user-approved job access; leave wallet ownership and signing permission in the APoW user flow.
-
-### Wajo / Fo
-
-Wajo presents Fo as a personal assistant with human support. Its public site does not document an unrestricted shell, miner daemon lifetime, or CLI secret injection. [Wajo](https://wajo.ai/).
-
-Instruction: check capabilities before installation. Never send wallet secrets to the assistant or a human support operator. Use Easy Mode only on a supported, approved runner. If the workspace cannot run it, report that limit and use the managed-service flow when available. Browser automation capability alone is not mining compatibility.
+Confirm that commands run on the user's selected computer, rather than the bot's
+own computer. A historical successful CLI run does not prove durable custody.
+Check version, independent restore, one runner, and stop/restart on the selected
+host. Status routines must not create extra wallets or duplicate miners.
 
 ### ChatGPT dots
 
-A dot has a cloud computer and can start Work or Codex tasks on an owner-connected computer. Local work depends on that computer staying online with ChatGPT open. The private browser sign-in flow sends credentials to the browser, not to the conversation. These features do not establish a CLI wallet-unlock interface. [Computers and apps](https://learn.chatgpt.com/docs/dots/computers-and-apps).
+Identify the exact execution environment for every delegated task. A connected
+local computer is a candidate; a separate cloud task is not the same host.
+Keep wallet material on the selected host. Network credential placeholders and
+browser logins are not keystore passwords. Stop the actual miner process and
+verify the result rather than assuming that pausing a dot stops delegated work.
 
-Instruction: identify where the runner will execute. Prefer an already approved connected computer with a host-local secret manager when the cloud runtime has no supported unlock method. Run Easy Mode there and keep wallet secrets on that host. For delegated Codex Cloud work, distinguish direct environment secrets from network placeholders; a placeholder is not a keystore password. Do not extract a browser password, cookie, or app token. [Credential controls](https://learn.chatgpt.com/docs/enterprise/dots-security).
+### Muse
 
-Before funding, prove fresh-process recovery and confirm what happens when the task ends or the connected computer goes offline. If secure signing or platform permission is missing, stop at read-only monitoring. A dot's persistent conversation does not prove that its delegated miner remains running. **APoW status: candidate for owner-runner testing; no complete agent-specific pass recorded.**
+Wait for Cloud Mining; do not create or unlock a wallet in the assistant's VM.
+A future approved connector should use a scoped job token through the platform's
+supported credential interface. Do not infer wallet signing from browser or API
+credential handling. The cause of an earlier lost wallet has not been established
+by a controlled recovery test.
+
+### Instinct
+
+Do a read-only readiness check without assuming shell or custom-connector support.
+Use the future APoW browser flow only if supported and tested; otherwise hand the
+link to the user. Wallet recovery and owner authorization happen with the user.
+
+### Wajo / Fo
+
+Do not depend on files, memory, or chat persistence for wallet custody. Never share
+a key or recovery secret with the assistant or human support. A future integration
+must reconnect to the same account and job after a new chat; a chat reset must not
+create a replacement wallet. If only links are supported, hand off to the user.
 
 ### Claude Duet
 
-Claude Duet runs on a cloud computer. Anthropic keeps browser credentials and connected-app tokens outside the agent's work environment; connector requests can use substituted credentials. Its payment approvals still apply to unattended work. These documented mechanisms do not establish that a Node process can unlock an encrypted wallet. [Security and approvals](https://claude.com/resources/articles/claude-duet-safety-privacy-and-security).
+Wait for a tested Cloud Mining integration. Browser credentials or protected
+connector tokens do not establish a local signer. Do not assume a computer-control
+bridge exists. Retain platform approval requirements for any future job controls.
 
-Instruction: test shell access, persistent files, a supported wallet-unlock path, and runner lifetime before creating a funding handoff. Never treat a connector token placeholder or browser sign-in form as a keystore password. Use Easy Mode only if the platform supports the signing and payment workflow. An existing owner-controlled runner is an alternative only when a supported, authorized tool can control it; do not assume Duet has a local-computer connector or bypass its approval requirements. If those checks fail, offer read-only monitoring and stop before funding. **APoW status: direct signing unverified; do not advertise unattended mining support.**
+## Other CLI agents
 
-### OpenClaw
+OpenClaw, Hermes, Claude Code, Codex, Manus, Cowork, and Perplexity must meet the
+same wallet-host and recovery rules. A product name does not establish where a
+command executes. Use an existing, user-approved trusted computer; do not rent a
+server or create an assistant-cloud wallet as a fallback. In this assistant guide,
+all supported paths use x402 grinding, never an automatic CPU/GPU fallback.
 
-OpenClaw has execution tools and background process handles. `yieldMs` controls when a tool returns, while `timeoutSeconds` controls process lifetime; `timeoutSeconds: 0` disables that timeout. Processes remain subject to the selected host and sandbox lifecycle. [Exec](https://docs.openclaw.ai/tools/exec), [skills](https://docs.openclaw.ai/tools/skills).
+## Recovery before funding
 
-Instruction: install the skill in the intended workspace. Use the existing approved host, Easy Mode, and the execution tool's background option. Set an appropriate process timeout and record the returned session handle. Verify with the process tool. Do not infer durability from a PID, use another agent's wallet, or bypass a host restriction.
+CLI 0.12.3 `wallet verify-recovery` proves a fresh-process unlock of the same
+address. It does **not** prove off-device backup. The proposed
+`wallet verify-backup` command is not implemented in that release.
 
-### Hermes
+Before presenting a funding handoff, the user must restore an encrypted backup on
+a separate trusted device using independently recoverable unlock material. Verify
+the same address; record only the address and outcome. A temp folder on the same
+host or an unconfirmed sync folder is insufficient. Keep backup and unlock material
+separate, outside chat and the repository. If the restore fails, repair the same
+wallet and stop before funding; never create a replacement to skip the check.
 
-Hermes provides terminal and process tools with configurable execution backends. A background process started by a delegated child may be terminated when that child ends. [Tools](https://hermes-agent.nousresearch.com/docs/user-guide/features/tools/), [delegation](https://hermes-agent.nousresearch.com/docs/user-guide/features/delegation).
+After recovery and explicit spending approval, the CLI requests Base ETH only,
+using its current funding quote. It retains gas and converts the service budget
+to USDC. Do not invent a fixed ETH amount or ask for a separate USDC deposit.
 
-Instruction: check the active terminal backend. Start the miner from the parent agent on the intended host, not a short-lived delegated agent. Use Easy Mode, persistent storage, and a secret-manager unlock reference. For unattended operation, use the host's existing service manager and verify a restart. Do not copy provider or wallet credentials between profiles.
+## End-to-end proof
 
-### Claude Code
+No complete per-agent pass is recorded for the six assistants above. Version and
+readiness checks are free; funded tests wait for the grinder incident to be
+resolved and a finite budget to be approved.
 
-Claude Code can run Bash tasks in the background and return a task ID. That facility allows the conversation to continue; it is not a promise of a permanent operating-system service. [Background tasks](https://code.claude.com/docs/en/interactive-mode), [skills](https://code.claude.com/docs/en/skills).
+A pass needs the same recoverable wallet throughout, a valid nonce delivered to
+the client, reconciled x402 payment, a confirmed Base mine, a clean stop, and a
+restart using the same wallet. A health check or server-side GPU result is not
+proof that the client received its purchased nonce.
 
-Instruction: use the local trusted terminal for password entry or a supported secret store. Run Easy Mode and record the background task ID. For continued mining after Claude Code exits, use an approved service manager on the same host. Keep subscription LLM configuration optional; Easy Mode already handles the mint LLM.
-
-### Codex
-
-Local Codex runs on the selected computer. Each current cloud task has its own isolated VM and saved state; public documentation describes coding-task continuation and finite state retention, not a permanent miner service. Network secrets substituted into HTTPS requests are not raw credentials available to local Node processes. [CLI](https://learn.chatgpt.com/docs/codex/cli), [cloud environments](https://learn.chatgpt.com/docs/environments/cloud-environments).
-
-Instruction: distinguish local and cloud execution. On local, use Easy Mode with the host's supported secret manager. In cloud, check network access and environment-variable secret delivery explicitly; do not assume a network secret can unlock a keystore. Keep recovery material out of repository commits and published environment snapshots. Use a durable approved runner or managed APoW jobs for unattended mining.
-
-### Manus
-
-Manus documents isolated task sandboxes and a separate persistent Cloud Computer product. A task sandbox must not be treated as equivalent to an always-on computer. [Sandbox](https://manus.im/blog/manus-sandbox), [Cloud Computer](https://manus.im/blog/manus-cloud-computer).
-
-Instruction: use Easy Mode. Identify which runtime is active, and verify its storage, unlock, and process lifetime. Use an existing approved persistent computer only if its terms permit the workload. Do not purchase an upgrade or server automatically. Scheduled tasks should check a known runner rather than repeatedly create wallets or miners.
-
-### Claude Cowork
-
-Cowork cloud work can continue after the desktop app closes. Actions on the local computer still depend on that computer being available. Neither fact alone establishes an unattended shell miner. [Cowork](https://support.claude.com/en/articles/13345190-get-started-with-claude-cowork).
-
-Instruction: determine whether execution is local or cloud. Use Easy Mode only if shell execution and secure unlock are supported. Keep a local host awake for local signing. Prefer approved managed job control over copying wallet secrets into a task VM.
-
-### Perplexity Computer / Personal Computer
-
-Personal Computer connects an assistant to a user's own computer. Cloud Computer work uses a different environment. Availability of one does not establish the other's storage or daemon guarantees. [Personal Computer](https://www.perplexity.ai/personal-computer), [Computer](https://www.perplexity.ai/en-GB/hub/blog/computer-for-enterprise).
-
-Instruction: use the existing approved computer, Easy Mode, and a host-local secret manager. Verify the host remains on and the miner survives the agent turn. If only a temporary cloud task is available, use the same capability checks as other cloud assistants.
-
-## Optional local mining
-
-Local CPU mining remains an explicit experiment. In Advanced Mode, disable remote grinding with `USE_X402_GRIND=false`; choose a supported native CPU grinder or JS workers. RPC and mint LLM choices are separate. No USDC is needed only when all selected paid services are off.
-
-Measure local hashrate, live target, rig hashpower, work changes, and confirmed receipts. Low network activity can make a slow sandbox viable, but it does not guarantee low difficulty or a reward. A successful quiet-network trial does not predict results under competition. Never enable fallback silently after a remote service failure.
-
-## Hosting terms
-
-An owned, already running computer avoids a new hosting subscription. Check both the assistant's and host's rules; offloading hashes does not automatically exempt a signing runner from a mining restriction. Do not recommend a free tier as a workaround.
-
-[Contabo](https://contabo.com/blog/can-i-use-contabo-servers-for-crypto/) allows mining on dedicated-resource products and prohibits it on VPS. [DigitalOcean's AUP](https://www.digitalocean.com/legal/acceptable-use-policy) requires explicit written permission. These are examples of why product-specific checks matter, not a cheapest-host recommendation. Any rental needs a current quote, separate cost approval, and an end date.
+Unknown payment or transaction outcomes stop new dispatch until reconciliation.
+Never widen policy limits, launch duplicate jobs, or silently change mining modes.
+Cloud Mining additionally needs owner recovery/revocation, enforced signing limits,
+cross-user isolation, budget reservation, and browser-close operation before release.
